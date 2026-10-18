@@ -1,0 +1,37 @@
+[
+    {
+        "order_id": 1,
+        "user_id": 101,
+        "order_value": 200.0,
+        "timestamp": "2025-03-01T10:00:00Z",
+        "_comment": "This event has a correct data"
+    },
+    {
+        "order_id": 2,
+        "user_id": 102,
+        "order_value": -150.0,
+        "timestamp": "2025-03-01T10:05:00Z",
+        "_comment": "This event has an incorrect data -> negative"
+    },
+    {
+        "order_id": 3,
+        "user_id": 103,
+        "order_value": 10000.0,
+        "timestamp": "2025-03-01T10:10:00Z",
+        "_comment": "This event has an incorrect data -> too large"
+    },
+    {
+        "order_id": 4,
+        "user_id": 104,
+        "order_value": 300.0,
+        "timestamp": "2025-03-01T10:15:00Z",
+        "_comment": "Assume this event is missed by the consumer"
+    },
+    {
+        "order_id": 5,
+        "user_id": 105,
+        "order_value": 250.0,
+        "timestamp": "2025-03-01T10:20:00Z",
+        "_comment": "This event has a correct data"
+    }
+]
