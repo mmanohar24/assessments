@@ -1,0 +1,109 @@
+.app {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px env(safe-area-inset-right) max(24px, env(safe-area-inset-bottom))
+    env(safe-area-inset-left);
+  /* The canvas reaches past the stage, so clip it at the screen edge. */
+  overflow: hidden;
+}
+
+.stage {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.blob-canvas {
+  /* The blob's resting size on screen. */
+  --blob-box: min(70vmin, 480px);
+  /* The canvas is drawn 1.5x bigger than that, with negative margins so the
+     layout stays the same. The spare room lets the blob grow with your
+     voice and squish without being cut off. Keep in step with
+     CANVAS_OVERSCAN in useBlob.ts. */
+  width: calc(var(--blob-box) * 1.5);
+  height: calc(var(--blob-box) * 1.5);
+  margin: calc(var(--blob-box) * -0.25);
+  display: block;
+  /* Quick repeated taps poke the blob instead of zooming the page. */
+  touch-action: manipulation;
+}
+
+.footer {
+  /* Sits above the canvas's spare room so the buttons stay clickable. */
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #8891b5;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mic-button,
+.mute-button {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  background: #1a2048;
+  color: #cdd3e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.mic-button {
+  width: 56px;
+  height: 56px;
+}
+
+.mute-button {
+  width: 44px;
+  height: 44px;
+}
+
+.mic-button:hover,
+.mute-button:hover {
+  background: #232a5c;
+}
+
+/* Listening: the button lights up in the blob's pink. */
+.mic-button[aria-pressed='true'] {
+  background: #ff8fa3;
+  color: #0b1026;
+}
+
+.mic-button:active,
+.mute-button:active {
+  transform: scale(0.96);
+}
+
+.mic-button:focus-visible,
+.mute-button:focus-visible {
+  outline: 2px solid #ff8fa3;
+  outline-offset: 2px;
+}

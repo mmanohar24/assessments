@@ -1,0 +1,264 @@
+@import "tailwindcss";
+
+/*
+ * The persistent left rail needs BOTH width and height, and `md:` only asks about
+ * width. A landscape phone is 852px wide and ~320px tall, so it qualified for the
+ * desktop layout and got a 320px rail (39% of the screen) with the mobile Close button
+ * suppressed, a rail taller than the window, and the zoom stack anchored to a bottom
+ * edge it could not reach. Every `md:` that gates the desktop HUD is a `rail:` instead.
+ *
+ * 600px clears a landscape iPhone Pro Max (430px) with room to spare, and sits below
+ * iPad landscape (768px), so tablets and laptops keep the rail.
+ */
+@custom-variant rail (@media (min-width: 768px) and (min-height: 600px));
+
+/*
+ * Tokens below are generated from design.md via:
+ *   npx @google/design.md export design.md --format css-tailwind
+ * with hand-fixes for bugs in that output, verified empirically before
+ * working around them (both are real Tailwind v4 behaviors, not guesses):
+ *
+ * 1. The CLI left uiEmphasis/heading fontFamily as an unresolved literal
+ *    "{typography.ui.fontFamily}" string instead of resolving the token
+ *    reference -- broken CSS. Typography is applied via the semantic
+ *    .text-ui / .text-heading / etc. classes below instead of Tailwind's
+ *    auto-generated per-key utilities, which sidesteps this and #2.
+ *
+ * 2. --font-weight-* keys (ui, heading, ...) share a name with the
+ *    --font-* (family) keys -- Tailwind v4 namespaces both to a
+ *    `.font-{key}` utility class, so the weight utility silently never
+ *    applies (confirmed by inspecting the compiled CSS: only the
+ *    font-family rule was emitted for the shared key).
+ *
+ * design.md's `spacing` scale (xs/sm/md/lg/xl/xxl) is deliberately NOT
+ * translated to a custom --spacing-* theme block here. Tailwind v4 uses
+ * ONE shared --spacing-* namespace for width/height/max-width/gap/padding/
+ * margin/inset utilities together, and its OWN built-in scale already uses
+ * these exact key names (max-w-md, w-lg, etc. default to ~28rem/32rem
+ * scale values). Defining --spacing-md: 12px silently overrode Tailwind's
+ * built-in max-w-md/w-md/h-md from their intended size down to 12px
+ * everywhere in the app -- confirmed in the compiled CSS output:
+ * `.max-w-md { max-width: var(--spacing-md); }`. design.md's scale happens
+ * to land exactly on Tailwind's default numeric steps (4px each), so use
+ * those instead: xs=1 (4px), sm=2 (8px), md=3 (12px), lg=5 (20px),
+ * xl=8 (32px), xxl=12 (48px) -- e.g. `gap-3` for design.md's `spacing.md`.
+ */
+@theme {
+  --color-background: #14151b;
+  --color-surface: #1f212a;
+  --color-surfaceRaised: #2a2d38;
+  --color-border: #3e424c;
+  --color-textPrimary: #ede9e2;
+  --color-textSecondary: #9a97a6;
+  --color-human: #5df8f4;
+  --color-bot: #7e8fa0;
+  --color-loot: #f8cf65;
+  --color-kill: #f63d4c;
+  --color-killed: #c23440;
+  --color-storm: #d34dd9;
+  --color-focusRing: #5df8f4;
+
+  --font-ui: var(--font-inter), -apple-system, "Segoe UI", sans-serif;
+  --font-data: var(--font-jetbrains-mono), "SF Mono", Consolas, monospace;
+
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+}
+
+/*
+ * The tool is a fixed, full-viewport HUD: nothing outside the map and its panels is
+ * ever meant to scroll. Stating that here (rather than via h-full/min-h-full utilities
+ * on <html>/<body>) is deliberate -- `height: 100%` resolves against the initial
+ * containing block, which on iOS Safari is the LARGE viewport, i.e. the height with the
+ * toolbars hidden. The toolbars are not hidden, so <body> came out ~90px taller than the
+ * window and the whole document scrolled by that much: the playback bar sat below the
+ * bottom toolbar, and scrolling down to reach it pushed the drawer's Close button off
+ * the top. `100dvh` is the height actually on screen.
+ *
+ * Locking overflow is what keeps dvh stable -- with nothing to scroll, Safari never
+ * collapses its toolbars, so the unit never changes and never resizes the map mid-pinch.
+ */
+html,
+body {
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior-y: none;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-textPrimary);
+}
+
+/* Semantic typography classes (design.md `typography` tokens) */
+.text-ui {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0px;
+}
+
+.text-ui-emphasis {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0px;
+}
+
+.text-heading {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.text-data {
+  font-family: var(--font-data);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* design.md focusRing token: visible keyboard focus ring, not browser default */
+:focus-visible {
+  outline: 2px solid var(--color-focusRing);
+  outline-offset: 2px;
+}
+
+/* Event markers are SVG <g> elements, where `outline` isn't reliably rendered across
+   browsers -- so the focus indicator is a real <circle> shown only on keyboard focus.
+   Hover reveals it too, as an affordance that these markers are interactive. */
+.marker {
+  cursor: pointer;
+}
+
+.marker:focus,
+.marker:focus-visible {
+  outline: none;
+}
+
+.marker-focus-ring {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.marker:focus-visible .marker-focus-ring,
+.marker:hover .marker-focus-ring {
+  opacity: 1;
+}
+
+/* Entrance for a newly selected match's markers.
+   The viewBox glide (MapViewport.animateTo) is only visible for in-place changes such
+   as the reset button: selecting a match is a route change, and React prepares the new
+   page tree off-screen before swapping it in, so an animation started on mount plays
+   while still hidden. A CSS animation on the committed elements does survive that swap,
+   so the new match visibly draws itself in rather than blinking into place. */
+@keyframes match-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.match-layer {
+  animation: match-enter 380ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .match-layer {
+    animation: none;
+  }
+}
+
+/* While the timeline is mid-playback the full route stays visible but faint, so the
+   revealed events read as "what has happened so far" against the whole route. */
+.match-layer.is-playing polyline:not(.journey-halo) {
+  stroke-opacity: 0.12;
+}
+
+/* Playback scrubber, per design.md's `playbackScrubber` component tokens: track in
+   `border`, fill in `human` (a UI-state colour here, not a data colour), pill radius.
+   The input is 44px tall so the drag target meets the 44px minimum even though the
+   thumb itself is drawn smaller -- a literally 44px-wide thumb would cover a large
+   slice of the track and make precise scrubbing harder, which is the opposite of what
+   the touch-target rule is for. */
+.playback-scrubber {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.playback-scrubber::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--color-human) 0%,
+    var(--color-human) calc(var(--playback-fill, 0) * 100%),
+    var(--color-border) calc(var(--playback-fill, 0) * 100%),
+    var(--color-border) 100%
+  );
+}
+
+.playback-scrubber::-moz-range-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+.playback-scrubber::-moz-range-progress {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-human);
+}
+
+.playback-scrubber::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-human);
+  border: 2px solid var(--color-background);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.45);
+}
+
+.playback-scrubber::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--color-human);
+  border: 2px solid var(--color-background);
+}
+
+/* Player journeys are focusable too (one stop per player, not per position sample),
+   so a keyboard user can enumerate who was in the match. Same halo technique as the
+   event markers above, since `outline` on an SVG <g> is unreliable. */
+.journey {
+  cursor: pointer;
+}
+
+.journey:focus,
+.journey:focus-visible {
+  outline: none;
+}
+
+.journey-halo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.journey:focus-visible .journey-halo,
+.journey:hover .journey-halo {
+  opacity: 0.45;
+}
