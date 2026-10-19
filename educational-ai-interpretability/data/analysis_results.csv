@@ -1,0 +1,21 @@
+concept,student_level,word_count,sentence_count,flesch_kincaid,unique_words,analogy_count,example_count
+Photosynthesis,elementary school student (8-10 years old),41,3,6.1448780487804875,31,1,0
+Photosynthesis,middle school student (13-14 years old),32,2,7.612500000000001,29,1,0
+Photosynthesis,college freshman (18-19 years old),44,2,11.455465116279068,41,1,0
+Photosynthesis,expert researcher in the field,43,2,16.12058139534884,37,0,0
+Recursion,elementary school student (8-10 years old),40,2,9.025000000000002,29,1,0
+Recursion,middle school student (13-14 years old),55,3,8.938181818181818,39,1,1
+Recursion,college freshman (18-19 years old),44,3,6.220909090909089,34,1,0
+Recursion,expert researcher in the field,41,2,12.839146341463415,34,1,0
+Probability,elementary school student (8-10 years old),44,3,6.489090909090912,35,1,1
+Probability,middle school student (13-14 years old),48,3,6.137499999999999,33,1,1
+Probability,college freshman (18-19 years old),54,3,9.77924528301887,34,1,0
+Probability,expert researcher in the field,34,2,10.128235294117648,28,1,0
+Entropy,elementary school student (8-10 years old),38,3,6.441621621621625,35,2,1
+Entropy,middle school student (13-14 years old),48,3,8.34553191489362,36,2,0
+Entropy,college freshman (18-19 years old),55,3,11.512727272727272,41,0,0
+Entropy,expert researcher in the field,50,3,12.622000000000003,37,0,0
+Neural Networks,elementary school student (8-10 years old),39,2,7.748333333333335,33,1,0
+Neural Networks,middle school student (13-14 years old),38,2,8.588421052631581,33,1,2
+Neural Networks,college freshman (18-19 years old),59,3,12.680000000000003,51,2,0
+Neural Networks,expert researcher in the field,52,3,13.181538461538462,45,0,1
