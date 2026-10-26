@@ -577,14 +577,13 @@ User has explicitly authorized all of the following without further confirmation
 Run: `cd creator-memory && vercel --prod` (first run links/creates the Vercel project non-interactively if needed, e.g. `vercel --prod --yes`)
 Expected: deployment succeeds; capture the printed production URL.
 
-- [ ] **Step 2: Create and push the `creator-memory` branch**
+- [ ] **Step 2: Push the `creator-memory` branch**
 
-The repo root already contains the `creator-memory/` folder from Tasks 1-9, committed on the current working branch. Create a new branch named exactly `creator-memory`, ensure all creator-memory commits are on it, and push it to `https://github.com/mmanohar24/assessments`.
+All Tasks 1-9 commits were made directly on branch `creator-memory` (created before Task 1). Push it to `https://github.com/mmanohar24/assessments`.
 
 Run:
 ```bash
 cd "/Users/manojvenkatesunmanoharan/Desktop/Claude Code Projects/assessments"
-git checkout -b creator-memory   # or git branch -m if already on an unnamed feature branch
 git push -u origin creator-memory
 ```
 Expected: branch pushed, visible on GitHub.
