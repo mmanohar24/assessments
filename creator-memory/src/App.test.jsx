@@ -31,6 +31,27 @@ test('rendering App at / redirects to /memory', () => {
   expect(screen.getByRole('heading', { name: 'Learned Traits' })).toBeInTheDocument()
 })
 
+test('rendering App at an unknown route redirects to /memory instead of rendering blank', () => {
+  render(
+    <MemoryRouter initialEntries={['/nope']}>
+      <App />
+    </MemoryRouter>
+  )
+  expect(screen.getByRole('heading', { name: 'Learned Traits' })).toBeInTheDocument()
+})
+
+test('route transitions stack in the same grid cell instead of adding layout height', () => {
+  render(
+    <MemoryRouter initialEntries={['/memory']}>
+      <App />
+    </MemoryRouter>
+  )
+  const heading = screen.getByRole('heading', { name: 'Learned Traits' })
+  const animatedLayer = heading.closest('.col-start-1')
+  expect(animatedLayer).toHaveClass('row-start-1')
+  expect(animatedLayer.parentElement).toHaveClass('grid')
+})
+
 test('clicking the header Help button opens the HelpDrawer', () => {
   render(
     <MemoryRouter>

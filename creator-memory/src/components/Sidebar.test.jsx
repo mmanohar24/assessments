@@ -12,6 +12,17 @@ test('marks the current route link as active', () => {
   expect(screen.getByRole('link', { name: 'Memory' })).not.toHaveAttribute('aria-current', 'page')
 })
 
+test('each nav link renders an icon, and its label is hidden below the md breakpoint', () => {
+  render(
+    <MemoryRouter>
+      <Sidebar />
+    </MemoryRouter>
+  )
+  const settingsLink = screen.getByRole('link', { name: 'Settings' })
+  expect(settingsLink.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument()
+  expect(screen.getByText('Settings')).toHaveClass('hidden', 'md:inline')
+})
+
 test('mobile toggle opens a full-width sheet', () => {
   render(
     <MemoryRouter>

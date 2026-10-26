@@ -30,7 +30,7 @@ export default function InEditor() {
 
   return (
     <div>
-      <h1>In Editor</h1>
+      <h1 className="sr-only">In Editor</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 mt-6">
         <section>

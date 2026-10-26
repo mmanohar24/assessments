@@ -30,7 +30,7 @@ export default function Memory() {
 
   return (
     <div>
-      <h1>Memory</h1>
+      <h1 className="sr-only">Memory</h1>
 
       <div className="flex gap-4 my-6">
         {STATS.map((stat) => (

@@ -39,7 +39,7 @@ export default function Settings() {
 
   return (
     <div>
-      <h1>Settings</h1>
+      <h1 className="sr-only">Settings</h1>
 
       <div className="mt-6 max-w-lg">
         {TOGGLES.map((t) => (

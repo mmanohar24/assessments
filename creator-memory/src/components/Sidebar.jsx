@@ -2,11 +2,28 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
 const LINKS = [
-  { to: '/memory', label: 'Memory' },
-  { to: '/new-project', label: 'New Project' },
-  { to: '/in-editor', label: 'In Editor' },
-  { to: '/settings', label: 'Settings' },
+  { to: '/memory', label: 'Memory', icon: 'M12 2v8l6 3M12 2v8l-6 3M12 22V10' },
+  { to: '/new-project', label: 'New Project', icon: 'M12 5v14M5 12h14' },
+  { to: '/in-editor', label: 'In Editor', icon: 'M3 6h18M3 12h18M3 18h12' },
+  { to: '/settings', label: 'Settings', icon: 'M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1' },
 ]
+
+function Icon({ path }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      className="shrink-0"
+    >
+      <path d={path} />
+    </svg>
+  )
+}
 
 export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -39,12 +56,13 @@ export default function Sidebar() {
                 to={link.to}
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
-                  `block rounded-md px-3 py-2 text-sm ${
+                  `flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
                     isActive ? 'bg-accent-dim text-accent' : 'text-fg2'
                   }`
                 }
               >
-                <span className="truncate">{link.label}</span>
+                <Icon path={link.icon} />
+                <span className="hidden md:inline truncate">{link.label}</span>
               </NavLink>
             </li>
           ))}
