@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
 
-const FILE = 'file://' + path.join(__dirname, '..', 'index.html');
+// TARGET_URL runs the suite against a deployed copy; SUITE=live runs the happy path at 390 and 1280px plus the motion checks.
+const FILE = process.env.TARGET_URL || 'file://' + path.join(__dirname, '..', 'index.html');
+const PREFIX = process.env.TARGET_URL ? 'live-' : '';
 const SHOTS = path.join(__dirname, 'screenshots');
 fs.mkdirSync(SHOTS, { recursive: true });
 
@@ -53,7 +55,7 @@ async function noHScroll(page, label) {
   });
   check('No horizontal scroll: ' + label, r.sw <= r.iw && r.ssw <= r.scw, `page ${r.sw}/${r.iw}, app ${r.ssw}/${r.scw}`);
 }
-async function shot(page, name) { await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(380); await page.screenshot({ path: path.join(SHOTS, name + '.png') }); }
+async function shot(page, name) { await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(380); await page.screenshot({ path: path.join(SHOTS, PREFIX + name + '.png') }); }
 async function panelBtn(page, action) {
   const b = page.locator(`[data-action="${action}"]`);
   if (!(await b.isVisible())) await page.click('.demo-toggle');
@@ -465,13 +467,18 @@ async function motionTable(browser) {
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome' });
   try {
-    for (const [w, h] of [[360, 780], [390, 844], [1280, 900]]) {
-      await happyPath(browser, w, h);
-      await edgeCases(browser, w, h);
+    if (process.env.SUITE === 'live') {
+      for (const [w, h] of [[390, 844], [1280, 900]]) await happyPath(browser, w, h);
+      await motion(browser);
+    } else {
+      for (const [w, h] of [[360, 780], [390, 844], [1280, 900]]) {
+        await happyPath(browser, w, h);
+        await edgeCases(browser, w, h);
+      }
+      await keyboard(browser);
+      await motion(browser);
+      await motionTable(browser);
     }
-    await keyboard(browser);
-    await motion(browser);
-    await motionTable(browser);
   } catch (e) {
     check('Script ran to completion', false, e.message.split('\n').slice(0, 6).join(' / '));
   } finally {
