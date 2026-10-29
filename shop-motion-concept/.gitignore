@@ -1,0 +1,5 @@
+tests/screenshots/
+demo/.raw/
+node_modules/
+.vercel/
+.DS_Store
