@@ -1,0 +1,1664 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Safe Approval, an independent concept for Penster</title>
+<meta name="description" content="A working prototype of a safe approval flow for clinic marketing posts, with a plain-words safety check. Independent concept by Manoj Venkatesun Manoharan with sample data. Not affiliated with Penster.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark light">
+<script>
+  // Set theme and text size before first paint so there is no flash.
+  (function () {
+    var p = {};
+    try { p = JSON.parse(localStorage.getItem('penster-safe-approval:prefs') || '{}') || {}; } catch (e) {}
+    var t = p.theme === 'light' || p.theme === 'dark' ? p.theme
+      : (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', t);
+    if (p.size === 2 || p.size === 3) document.documentElement.setAttribute('data-size', String(p.size));
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* tokens:dark */
+:root {
+  --bg: #1A1A1A;
+  --surface: #1E293B;
+  --surface-2: #273449;
+  --text: #E2E8F0;
+  --muted: #94A3B8;
+  --border: #334155;
+  --border-strong: #6B7C93;
+  --primary: #22C55E;
+  --on-primary: #020617;
+  --primary-fg: #4ADE80;
+  --focus: #4ADE80;
+  --ok-bg: #0F2E1C;
+  --ok-fg: #4ADE80;
+  --warn-bg: #3A2A0A;
+  --warn-fg: #FBBF24;
+  --danger-bg: #3B1414;
+  --danger-fg: #FCA5A5;
+  --info-bg: #102A43;
+  --info-fg: #93C5FD;
+  --neutral-bg: #334155;
+  --neutral-fg: #E2E8F0;
+  --backdrop: rgba(2, 6, 23, 0.72);
+  --shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+/* end tokens:dark */
+/* tokens:light */
+:root[data-theme="light"] {
+  --bg: #F8FAFC;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F9;
+  --text: #0F172A;
+  --muted: #475569;
+  --border: #E2E8F0;
+  --border-strong: #64748B;
+  --primary: #16A34A;
+  --on-primary: #020617;
+  --primary-fg: #15803D;
+  --focus: #15803D;
+  --ok-bg: #DCFCE7;
+  --ok-fg: #166534;
+  --warn-bg: #FEF3C7;
+  --warn-fg: #92400E;
+  --danger-bg: #FEE2E2;
+  --danger-fg: #991B1B;
+  --info-bg: #DBEAFE;
+  --info-fg: #1E40AF;
+  --neutral-bg: #E2E8F0;
+  --neutral-fg: #1E293B;
+  --backdrop: rgba(15, 23, 42, 0.5);
+  --shadow: 0 24px 64px rgba(15, 23, 42, 0.14);
+  color-scheme: light;
+}
+/* end tokens:light */
+
+:root { --radius: 8px; --radius-lg: 14px; --serif: "DM Serif Display", Georgia, serif; --sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif; }
+html[data-size="2"] { font-size: 112.5%; }
+html[data-size="3"] { font-size: 125%; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--sans); font-size: 1rem; line-height: 1.5;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+}
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; line-height: 1.2; margin: 0 0 .5rem; text-wrap: balance; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.3rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0 0 .75rem; }
+a { color: var(--primary-fg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button, a, input, select, textarea, label, summary { touch-action: manipulation; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+[tabindex="-1"]:focus { outline: none; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.i { width: 1.15em; height: 1.15em; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.2em; }
+
+.skip { position: absolute; left: 12px; top: -100px; z-index: 100; background: var(--primary); color: var(--on-primary); padding: .75rem 1rem; border-radius: var(--radius); font-weight: 700; text-decoration: none; }
+.skip:focus { top: 12px; }
+
+/* Concept bar */
+.concept { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; padding: .5rem 1rem; border-bottom: 1px solid var(--border); background: var(--surface); font-size: .8125rem; color: var(--muted); }
+.concept p { margin: 0; max-width: 60ch; }
+.concept strong { color: var(--text); font-weight: 600; }
+.concept-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.sizes { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius); overflow: hidden; }
+.sizes button { min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--text); cursor: pointer; font-weight: 700; }
+.sizes button + button { border-left: 1px solid var(--border-strong); }
+.sizes button[aria-pressed="true"] { background: var(--neutral-bg); color: var(--neutral-fg); box-shadow: inset 0 -3px 0 var(--primary-fg); }
+.sizes .s1 { font-size: .8rem; } .sizes .s2 { font-size: 1rem; } .sizes .s3 { font-size: 1.2rem; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .5rem 1rem; border-radius: var(--radius); border: 1px solid transparent; font-weight: 600; font-size: 1rem; line-height: 1.2; cursor: pointer; text-decoration: none; text-align: center; transition: background-color .15s ease, border-color .15s ease, transform .1s ease; }
+.btn:active { transform: scale(.98); }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: color-mix(in srgb, var(--primary) 88%, white); }
+.btn-secondary { background: transparent; color: var(--text); border-color: var(--border-strong); }
+.btn-secondary:hover { background: var(--surface-2); }
+.btn-ghost { background: transparent; color: var(--primary-fg); padding-inline: .5rem; }
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-warn { background: var(--warn-bg); color: var(--warn-fg); border-color: var(--warn-fg); }
+.btn-danger { background: var(--danger-bg); color: var(--danger-fg); border-color: var(--danger-fg); }
+.btn-small { min-height: 44px; padding: .35rem .75rem; font-size: .9375rem; }
+.btn[aria-disabled="true"] { background: var(--neutral-bg); color: var(--neutral-fg); border-color: var(--border-strong); border-style: dashed; cursor: not-allowed; transform: none; }
+.btn-block { width: 100%; }
+.stack { display: grid; gap: .75rem; }
+.row-btns { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+/* Stage and phone */
+.stage { display: block; }
+.phone { position: relative; display: flex; flex-direction: column; min-height: calc(100dvh - 3.5rem); background: var(--bg); }
+.appbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: 56px; padding: .5rem 1rem; background: var(--bg); border-bottom: 1px solid var(--border); }
+.brand { display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; font-size: 1.05rem; color: var(--text); text-decoration: none; }
+.brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--primary); color: var(--on-primary); }
+.brand-mark .i { width: 18px; height: 18px; }
+.timer { display: inline-flex; align-items: center; gap: .35rem; margin: 0; padding: .25rem .6rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); font-size: .8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.timer b { color: var(--text); font-weight: 700; }
+.timer[hidden] { display: none; }
+.timer.stopped { background: var(--ok-bg); color: var(--ok-fg); border-color: transparent; }
+.timer.stopped b { color: var(--ok-fg); }
+.scroll { flex: 1; display: flex; flex-direction: column; }
+main { flex: 1; display: flex; flex-direction: column; }
+main:focus { outline: none; }
+.screen { flex: 1; display: flex; flex-direction: column; padding: 1.25rem 1rem 2rem; animation: enter .22s ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (min-width: 900px) {
+  .stage { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 340px); gap: 40px; justify-content: center; align-items: start; padding: 24px; }
+  .phone { height: min(880px, calc(100dvh - 120px)); min-height: 620px; border: 1px solid var(--border); border-radius: 28px; overflow: hidden; transform: translateZ(0); box-shadow: var(--shadow); }
+  .scroll { overflow-y: auto; overscroll-behavior: contain; }
+  .notes > summary { display: none; }
+  .notes { position: sticky; top: 24px; }
+}
+
+/* Notes column */
+.notes { margin: 0 1rem 2rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); font-size: .9375rem; }
+.notes > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+.notes h2 { font-size: 1.35rem; margin-top: .25rem; }
+.notes h3 { font-family: var(--sans); font-size: .8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 1.25rem 0 .5rem; }
+.notes ol, .notes ul { margin: 0; padding-left: 1.2rem; display: grid; gap: .4rem; }
+.notes .live { list-style: none; padding: 0; }
+.notes .live li { display: flex; justify-content: space-between; gap: .5rem; padding: .4rem 0; border-bottom: 1px solid var(--border); }
+.notes .live b { font-variant-numeric: tabular-nums; text-align: right; }
+@media (min-width: 900px) { .notes { margin: 0; } }
+
+/* Shared bits */
+.lead { font-size: 1.0625rem; color: var(--muted); }
+.fine { font-size: .8125rem; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; }
+.card + .card { margin-top: 1rem; }
+.tag { display: inline-flex; align-items: center; gap: .25rem; padding: .1rem .45rem; border-radius: 999px; background: var(--neutral-bg); color: var(--neutral-fg); font-size: .75rem; font-weight: 700; letter-spacing: .02em; white-space: nowrap; font-family: var(--sans); }
+.chip { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .55rem; border-radius: 999px; font-size: .8125rem; font-weight: 700; white-space: nowrap; }
+.chip .i { width: 1em; height: 1em; }
+.chip-info { background: var(--info-bg); color: var(--info-fg); }
+.chip-warn { background: var(--warn-bg); color: var(--warn-fg); }
+.chip-ok { background: var(--ok-bg); color: var(--ok-fg); }
+.chip-danger { background: var(--danger-bg); color: var(--danger-fg); }
+.chip-neutral { background: var(--neutral-bg); color: var(--neutral-fg); }
+.back { display: inline-flex; align-items: center; gap: .25rem; min-height: 44px; margin: -.5rem 0 .5rem -.5rem; padding: 0 .5rem; color: var(--primary-fg); font-weight: 600; text-decoration: none; background: none; border: 0; cursor: pointer; border-radius: var(--radius); align-self: flex-start; }
+.back:hover { background: var(--surface-2); }
+
+/* Forms */
+label, legend { font-weight: 600; }
+.field { display: grid; gap: .35rem; margin-bottom: 1rem; }
+.hint { font-size: .875rem; color: var(--muted); margin: 0; }
+input[type="tel"], input[type="text"], textarea, select { width: 100%; min-height: 44px; padding: .6rem .75rem; font-size: 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); border-radius: var(--radius); }
+textarea { min-height: 9rem; resize: vertical; line-height: 1.5; }
+textarea[readonly] { background: var(--surface-2); }
+.error { display: flex; gap: .35rem; align-items: flex-start; color: var(--danger-fg); font-weight: 600; font-size: .9375rem; margin: 0; }
+.error:empty { display: none; }
+[aria-invalid="true"] { border-color: var(--danger-fg); }
+fieldset { border: 0; padding: 0; margin: 0 0 1.25rem; min-width: 0; }
+legend { padding: 0; margin-bottom: .5rem; }
+.options { display: grid; gap: .5rem; }
+.options.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opt { position: relative; display: flex; gap: .65rem; align-items: flex-start; min-height: 44px; padding: .7rem .8rem; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); cursor: pointer; font-weight: 500; }
+.opt input { margin: .2rem 0 0; width: 1.1rem; height: 1.1rem; accent-color: var(--primary); flex: none; }
+.opt:has(input:checked) { border-color: var(--primary-fg); box-shadow: inset 0 0 0 1px var(--primary-fg); background: var(--surface-2); }
+.opt:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.opt input:focus-visible { outline: none; }
+.opt small { display: block; color: var(--muted); font-weight: 400; font-size: .875rem; }
+.opt .sel { margin-left: auto; color: var(--primary-fg); display: none; }
+.opt:has(input:checked) .sel { display: inline-flex; }
+
+/* Welcome */
+.welcome { justify-content: center; gap: .25rem; }
+.hero { display: grid; gap: .5rem; margin: .5rem 0 1.5rem; }
+.hero-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .7rem .8rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); font-size: .9375rem; }
+.hero-row:nth-child(2) { margin-left: 1rem; }
+.hero-row:nth-child(3) { margin-left: 2rem; }
+.welcome h1 { font-size: 2rem; }
+
+/* Onboarding */
+.progress { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; font-size: .875rem; color: var(--muted); }
+.bars { display: flex; gap: 4px; flex: 1; }
+.bars span { height: 6px; flex: 1; border-radius: 3px; background: var(--neutral-bg); }
+.bars span.on { background: var(--primary-fg); }
+.clinic { display: flex; gap: .75rem; align-items: center; margin-bottom: 1.25rem; }
+.avatar { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--info-bg); color: var(--info-fg); font-weight: 700; flex: none; font-size: .875rem; }
+.ready-list { list-style: none; padding: 0; margin: 0 0 1.25rem; display: grid; gap: .5rem; }
+.ready-list li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .6rem .75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-size: .9375rem; }
+.big-stat { display: flex; gap: .75rem; margin-bottom: 1rem; }
+.big-stat > div { flex: 1; padding: .8rem; border-radius: var(--radius); }
+.big-stat strong { display: block; font-family: var(--serif); font-size: 1.9rem; font-weight: 400; line-height: 1.1; }
+.push { margin-top: auto; padding-top: 1rem; }
+
+/* Queue */
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: .5rem 0 1rem; }
+.stat { padding: .7rem .8rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.stat span { display: block; font-size: .8125rem; color: var(--muted); }
+.stat b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.meter { height: 6px; border-radius: 3px; background: var(--neutral-bg); margin-top: .4rem; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--primary-fg); border-radius: 3px; transform-origin: left; }
+.bulk { display: grid; gap: .4rem; margin-bottom: 1rem; }
+.list { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: .5rem; }
+.row { display: grid; gap: .3rem; padding: .8rem .9rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); color: var(--text); text-decoration: none; transition: border-color .15s ease, background-color .15s ease; }
+.row:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.row-top, .row-bottom { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; font-size: .8125rem; color: var(--muted); }
+.row-title { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
+.row-note { display: flex; gap: .35rem; align-items: flex-start; font-size: .8125rem; color: var(--warn-fg); }
+.type { font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: .75rem; }
+.plat { display: inline-flex; align-items: center; gap: .3rem; }
+.row.decided .row-title { color: var(--muted); }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; margin: 0 0 .5rem; }
+.section-head h2 { margin: 0; }
+.learn ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; }
+.learn li { display: flex; gap: .55rem; align-items: flex-start; font-size: .9375rem; }
+.learn li .i { color: var(--primary-fg); margin-top: .15rem; }
+.learn .fine { margin: .75rem 0 0; }
+.result { border-color: var(--border-strong); margin-bottom: 1rem; }
+.result h2 { font-family: var(--sans); font-weight: 700; font-size: 1.05rem; }
+.result ul { margin: 0 0 .75rem; padding-left: 1.1rem; display: grid; gap: .35rem; font-size: .9375rem; }
+.done { text-align: center; margin-bottom: 1.25rem; padding: 1.5rem 1rem; }
+.done-icon { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--ok-bg); color: var(--ok-fg); margin-bottom: .75rem; }
+.done-icon .i { width: 28px; height: 28px; }
+.done dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: 1rem 0 0; text-align: left; }
+.done dl div { background: var(--surface-2); border-radius: var(--radius); padding: .6rem .75rem; }
+.done dt { font-size: .8125rem; color: var(--muted); }
+.done dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.seg { display: flex; flex-wrap: wrap; gap: .4rem; }
+.seg label { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; padding: .4rem .8rem; border: 1px solid var(--border-strong); border-radius: var(--radius); cursor: pointer; font-weight: 600; font-size: .9375rem; background: var(--surface); }
+.seg input { accent-color: var(--primary); width: 1rem; height: 1rem; margin: 0; }
+.seg label:has(input:checked) { border-color: var(--primary-fg); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--primary-fg); }
+.seg label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.seg input:focus-visible { outline: none; }
+details.log { margin-top: 1rem; }
+details.log > summary { min-height: 44px; display: flex; align-items: center; gap: .5rem; cursor: pointer; font-weight: 700; }
+.log-list { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.log-list li { display: grid; gap: .15rem; padding: .55rem .7rem; border-left: 3px solid var(--border-strong); background: var(--surface-2); border-radius: 0 var(--radius) var(--radius) 0; font-size: .875rem; }
+.log-list li.by-penster { border-left-color: var(--info-fg); }
+.log-list li.by-doctor { border-left-color: var(--primary-fg); }
+.log-list .meta { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; color: var(--muted); font-size: .8125rem; }
+.log-list .who { font-weight: 700; color: var(--text); }
+.log-list q { color: var(--text); font-style: italic; }
+.log-list li.undone .what { text-decoration: line-through; }
+.log-list .empty { border-left-color: var(--border); }
+
+/* Review */
+.review-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; font-size: .8125rem; color: var(--muted); margin-bottom: .4rem; }
+.review h1 { font-size: 1.5rem; overflow-wrap: anywhere; }
+.why { display: flex; gap: .5rem; align-items: flex-start; padding: .65rem .8rem; border-radius: var(--radius); background: var(--info-bg); color: var(--info-fg); font-size: .9375rem; margin-bottom: 1rem; }
+.why .i { margin-top: .15rem; }
+.banner { display: flex; gap: .6rem; align-items: flex-start; padding: .8rem; border-radius: var(--radius); margin-bottom: 1rem; }
+.banner p { margin: 0; }
+.banner .i { margin-top: .15rem; }
+.banner-ok { background: var(--ok-bg); color: var(--ok-fg); }
+.banner-danger { background: var(--danger-bg); color: var(--danger-fg); }
+.pv-wrap { margin-bottom: 1.25rem; }
+.pv-wrap > fieldset { margin-bottom: .6rem; }
+.pv { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; font-size: .9375rem; }
+.pv-head { display: flex; align-items: center; gap: .6rem; padding: .65rem .75rem; }
+.pv-head .avatar { width: 34px; height: 34px; font-size: .75rem; background: var(--primary); color: var(--on-primary); }
+.pv-name { font-weight: 700; line-height: 1.2; }
+.pv-sub { font-size: .75rem; color: var(--muted); }
+.pv-plat { margin-left: auto; color: var(--muted); display: inline-flex; align-items: center; gap: .3rem; font-size: .75rem; }
+.pv-media { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; text-align: center; padding: 1rem; aspect-ratio: 1 / 1; background: radial-gradient(120% 90% at 20% 10%, color-mix(in srgb, var(--primary) 24%, var(--surface-2)), var(--surface-2) 60%), var(--surface-2); color: var(--text); }
+.pv-media.wide { aspect-ratio: 1.91 / 1; }
+.pv-media.tall { aspect-ratio: 4 / 5; }
+.pv-media .i { width: 32px; height: 32px; color: var(--muted); }
+.pv-media .chip .i { width: 1em; height: 1em; color: inherit; }
+.pv-media strong { font-weight: 600; max-width: 28ch; }
+.pv-media .tag { position: absolute; top: .6rem; left: .6rem; }
+.pv-media .consent { position: absolute; bottom: .6rem; left: .6rem; right: .6rem; justify-content: center; }
+.pv-actions { display: flex; gap: 1rem; padding: .55rem .75rem; color: var(--muted); font-size: .8125rem; border-top: 1px solid var(--border); }
+.pv-actions span { display: inline-flex; align-items: center; gap: .3rem; }
+.pv-cap { padding: .65rem .75rem; overflow-wrap: anywhere; }
+.pv-cap b { font-weight: 700; }
+mark.flag { background: var(--warn-bg); color: var(--warn-fg); font-weight: 700; padding: 0 .15rem; border-radius: 3px; text-decoration: underline wavy; text-decoration-thickness: 1.5px; text-underline-offset: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+mark.flag .i { width: .9em; height: .9em; margin-right: .1rem; vertical-align: -0.1em; }
+.editor { margin-bottom: 1.25rem; }
+.editor-foot { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
+.check { margin-bottom: 1rem; }
+.check h2:focus { outline: none; }
+.check-ok { display: flex; gap: .6rem; align-items: flex-start; padding: .8rem; border-radius: var(--radius); background: var(--ok-bg); color: var(--ok-fg); }
+.check-ok .i { margin-top: .15rem; }
+.check-ok p { margin: 0; }
+.flag-count { display: flex; align-items: center; gap: .4rem; font-weight: 700; color: var(--warn-fg); }
+.flag-list { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .75rem; }
+.flag-card { padding: .9rem; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--warn-fg); border-left-width: 5px; }
+.flag-head { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .4rem; color: var(--warn-fg); font-weight: 700; }
+.flag-quote { font-weight: 700; }
+.flag-quote span { text-decoration: underline wavy; text-decoration-color: var(--warn-fg); text-underline-offset: 3px; }
+.suggest { margin-top: .75rem; padding: .75rem; border-radius: var(--radius); background: var(--surface-2); }
+.suggest .s-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: .25rem; }
+.suggest .from { text-decoration: line-through; color: var(--muted); margin-bottom: .25rem; }
+.suggest .to { font-weight: 600; }
+.anyway { padding: .9rem; border-radius: var(--radius); border: 1px dashed var(--border-strong); }
+.anyway p { font-size: .9375rem; }
+.legal { display: flex; gap: .4rem; align-items: flex-start; }
+.bar { position: sticky; bottom: 0; z-index: 4; margin: auto -1rem -2rem; padding: .75rem 1rem calc(.75rem + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--border); }
+.bar-btns { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: .5rem; }
+.bar-btns.two { grid-template-columns: 1fr 1fr; }
+.bar-btns .btn { padding-inline: .5rem; }
+.bar .hint { margin-top: .5rem; text-align: center; }
+.bar .hint:empty { display: none; }
+
+/* Toast */
+.toast { position: fixed; left: 12px; right: 12px; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 20; display: flex; align-items: center; gap: .75rem; padding: .6rem .6rem .6rem 1rem; border-radius: var(--radius-lg); background: var(--text); color: var(--bg); box-shadow: var(--shadow); overflow: hidden; animation: enter .2s ease-out; }
+.toast[hidden] { display: none; }
+.toast p { margin: 0; flex: 1; font-weight: 600; font-size: .9375rem; }
+.toast .btn { background: var(--bg); color: var(--text); border-color: transparent; font-variant-numeric: tabular-nums; }
+.toast-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--primary); transform-origin: left; animation: shrink 6s linear forwards; }
+@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (min-width: 900px) { .toast { max-width: 396px; margin: 0 auto; } }
+
+/* Dialog */
+dialog.sheet { width: min(420px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid var(--border-strong); border-radius: 18px; background: var(--surface); color: var(--text); box-shadow: var(--shadow); overscroll-behavior: contain; }
+dialog.sheet::backdrop { background: var(--backdrop); }
+dialog.sheet[open] { animation: enter .2s ease-out; }
+.sheet-body { padding: 1.25rem; }
+.sheet-body h2 { font-size: 1.4rem; }
+.sheet-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin-top: 1.25rem; }
+.sheet-btns .btn { flex: 1 1 auto; }
+@media (max-width: 899px) { dialog.sheet { margin: auto auto 12px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .toast-bar { display: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#app-main" data-action="skip">Skip to the app</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5L2.8 19.5h18.4L12 3.5z"/><path d="M12 10v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></symbol>
+  <symbol id="i-instagram" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-facebook" viewBox="0 0 24 24"><path d="M14 8h3V4h-3a4 4 0 00-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z"/></symbol>
+  <symbol id="i-linkedin" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 10.5V17"/><path d="M8 7.2v.01"/><path d="M12 17v-6.5"/><path d="M12 13.5a2.5 2.5 0 015 0V17"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="i-comment" viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4 18-7z"/></symbol>
+  <symbol id="i-like" viewBox="0 0 24 24"><path d="M7 11v9H4v-9h3z"/><path d="M7 11l4-8a2 2 0 012 2v4h5a2 2 0 012 2.3l-1.2 6A2 2 0 0116.8 20H7"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v7h16v-7"/><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/></symbol>
+  <symbol id="i-repost" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 014-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 01-4 4H4"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+  <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 9l5 3-5 3V9z"/></symbol>
+  <symbol id="i-quote" viewBox="0 0 24 24"><path d="M7 7h4v4c0 3-2 5-4 6"/><path d="M14 7h4v4c0 3-2 5-4 6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 00-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0012 3z"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z"/><path d="M14 7l3 3"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 4v6h6"/><path d="M5.5 15a7 7 0 101.4-7.4L4 10"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+</svg>
+
+<header class="concept">
+  <p><strong>Independent concept</strong> by Manoj Venkatesun Manoharan. Not affiliated with Penster. All data is sample data.</p>
+  <div class="concept-tools">
+    <div class="sizes" role="group" aria-label="Text size">
+      <button type="button" class="s1" data-action="text-size" data-size="1" aria-pressed="true" aria-label="Text size: default">A</button>
+      <button type="button" class="s2" data-action="text-size" data-size="2" aria-pressed="false" aria-label="Text size: large">A</button>
+      <button type="button" class="s3" data-action="text-size" data-size="3" aria-pressed="false" aria-label="Text size: larger">A</button>
+    </div>
+    <button type="button" class="btn btn-secondary btn-small" data-action="theme" id="theme-btn"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span>Theme: Auto</span></button>
+    <button type="button" class="btn btn-secondary btn-small" data-action="reset"><svg class="i" aria-hidden="true"><use href="#i-reset"/></svg>Reset demo</button>
+  </div>
+</header>
+
+<div class="stage">
+  <div class="phone" id="device">
+    <div class="appbar">
+      <span class="brand"><span class="brand-mark"><svg class="i" aria-hidden="true"><use href="#i-pen"/></svg></span>Penster</span>
+      <p class="timer" id="signup-timer" hidden></p>
+    </div>
+    <div class="scroll" id="scroll">
+      <main id="app-main" tabindex="-1"><div id="app" style="display:contents"></div></main>
+    </div>
+    <div class="toast" id="toast" hidden>
+      <p id="toast-msg"></p>
+      <button type="button" class="btn btn-small" data-action="undo"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg><span>Undo</span> <span id="toast-count">6s</span></button>
+      <span class="toast-bar" id="toast-bar"></span>
+    </div>
+  </div>
+
+  <details class="notes" id="notes">
+    <summary>About this concept</summary>
+    <h2>Safe approval, in minutes</h2>
+    <p>A working prototype of how a doctor could approve a week of posts quickly, with a plain-words safety check before anything goes live. Made by Manoj Venkatesun Manoharan as an independent concept. Not affiliated with Penster. Smile Studio Dental and Dr. Meera Rao are made up.</p>
+
+    <h3>Try this (about 3 minutes)</h3>
+    <ol>
+      <li>Tap <b>Log in</b> and type any number. See what happens when there is no account.</li>
+      <li>Create the clinic account. It is 3 short steps.</li>
+      <li>Approve the first post and watch the signup timer stop.</li>
+      <li>Open <b>Whitening offer</b> and fix the flagged words with one tap.</li>
+      <li>Go back and tap <b>Approve all safe</b> to see what gets held back, and why.</li>
+    </ol>
+
+    <h3>Live from this demo</h3>
+    <ul class="live">
+      <li><span>Signup to first approval</span><b id="note-first">Not yet</b></li>
+      <li><span>Posts done</span><b id="note-done">0 of 8</b></li>
+      <li><span>Time saved so far (demo estimate)</span><b id="note-saved">0 min</b></li>
+    </ul>
+
+    <h3>Why this matters</h3>
+    <p>A clinic is responsible for what it posts. If the check explains itself in plain words and offers a safer line, a busy doctor can approve with confidence instead of avoiding the queue.</p>
+
+    <h3>What I noticed in the current app</h3>
+    <ul id="noticed">
+      <li>I tried the app as a new user and could not get past login, so I designed what that first step could look like.</li>
+      <!-- Add more notes here -->
+    </ul>
+
+    <p class="fine" style="margin-top:1.25rem">The safety check is a simple demo of the idea, not legal advice.</p>
+  </details>
+</div>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheet-title"></dialog>
+<div class="sr-only" aria-live="polite" aria-atomic="true" id="live"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'penster-safe-approval:v1';
+  var PREFS_KEY = 'penster-safe-approval:prefs';
+  var UNDO_MS = 6000;
+  var MIN_PER_POST = 6; // demo estimate of minutes a doctor would spend writing one post
+
+  var SPECIALTIES = {
+    'Dental': ['Implants', 'Teeth whitening', 'Braces and aligners', 'Root canal', 'Kids dentistry', 'Veneers'],
+    'Dermatology': ['Acne care', 'Skin checks', 'Hair loss', 'Laser treatment'],
+    'Physiotherapy': ['Back pain', 'Sports injuries', 'Post-surgery rehab', 'Posture'],
+    'Eye care': ['Eye tests', 'Cataract surgery', 'Contact lenses', 'Kids eye care']
+  };
+  var TONES = [
+    { id: 'Warm', hint: 'Kind and reassuring, like a chat at the front desk.' },
+    { id: 'Professional', hint: 'Clear and calm, facts first.' },
+    { id: 'Friendly', hint: 'Light and upbeat, with simple words.' }
+  ];
+  var RULE_PRESETS = [
+    'Never use before/after photos without consent',
+    'Never promise results',
+    'Never name a patient without consent',
+    'Write my own rule'
+  ];
+  var REJECT_REASONS = ['Wrong tone', 'Wrong topic', 'Too salesy', 'Other'];
+  var REJECT_LESSON = {
+    'Wrong tone': 'New drafts will stay closer to your chosen tone.',
+    'Wrong topic': 'Penster will suggest fewer posts like this one.',
+    'Too salesy': 'Fewer offers and discounts in new drafts.',
+    'Other': 'Saved so the team can look at it.'
+  };
+  var PLATFORMS = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn' };
+
+  var SAMPLE = [
+    { id: 'implant-faq', type: 'Carousel', platform: 'instagram', time: 'Wed 10:00 AM', title: 'Implants: 5 questions patients ask',
+      why: 'Implant searches are up 30% in your area this month.', visual: 'Slide 1 of 5: “Is an implant right for me?”', media: { kind: 'graphic' },
+      caption: 'Thinking about a dental implant? Swipe through the 5 questions our patients ask most: how long it takes, how it feels, how to care for it, what it costs, and who it suits. Book a chat with Dr. Meera Rao to see if it is right for you.' },
+    { id: 'cleaning', type: 'Story', platform: 'instagram', time: 'Thu 8:30 AM', title: 'Six-month cleaning reminder',
+      why: 'Many of your patients are due for a cleaning in November.', visual: 'Calendar with open morning slots', media: { kind: 'graphic' },
+      caption: 'Has it been six months? Time for a cleaning. Tap the link to pick a time that suits you. Early morning slots are open this week.' },
+    { id: 'team', type: 'Post', platform: 'linkedin', time: 'Thu 12:00 PM', title: 'Meet Anjali, our hygienist',
+      why: 'Team posts get twice as many comments as offers on your LinkedIn page.', visual: 'Photo of Anjali at the front desk (staff photo)', media: { kind: 'team' },
+      caption: 'Anjali has spent 9 years helping nervous patients feel at ease. This week she shares the small things that make a big difference: a calm room, clear steps, and time for questions.' },
+    { id: 'whitening', type: 'Post', platform: 'instagram', time: 'Fri 6:00 PM', title: 'Whitening offer for the festive season',
+      why: 'Whitening interest rises before Diwali in your city.', visual: 'Graphic: “Festive smile” with a stock photo', media: { kind: 'graphic' },
+      caption: 'Get a brighter smile before the festive season. Our whitening gives guaranteed results in one visit. Book this week and save 15%.' },
+    { id: 'kids', type: 'Reel script', platform: 'facebook', time: 'Sat 11:00 AM', title: 'Your child’s first dental visit',
+      why: 'Parents near you search for kids’ dentists most on weekends.', visual: '30-second reel, 3 scenes', media: { kind: 'video' },
+      caption: 'Scene 1: A bright waiting room with books and toys. Voice: “A first visit is mostly about saying hello.”\nScene 2: Dr. Meera shows a child the little mirror. Voice: “We count teeth, answer questions, and keep it short.”\nEnd card: Book a first visit for ages 2 and up.' },
+    { id: 'families', type: 'Post', platform: 'facebook', time: 'Sat 5:00 PM', title: 'Why families choose Smile Studio',
+      why: 'Families make up 6 in 10 of your new patients.', visual: 'Photo of the clinic waiting area', media: { kind: 'graphic' },
+      caption: 'Smile Studio is the best dentist in the city. Gentle care, modern tools, and evening hours for busy families.' },
+    { id: 'makeover', type: 'Post', platform: 'instagram', time: 'Mon 7:00 PM', title: 'Smile makeover: before and after',
+      why: 'Cosmetic searches near you doubled since September.', visual: 'Before and after photo of a real patient', media: { kind: 'patient', consent: 'unknown' },
+      stockVisual: 'Stock image of veneers (no real patient)',
+      caption: 'See how veneers changed this smile in just two visits. Ask us about your own smile makeover.' },
+    { id: 'priya', type: 'Post', platform: 'facebook', time: 'Tue 9:00 AM', title: 'Patient story: Priya’s root canal',
+      why: 'Posts that mention “gentle” are your most liked this year.', visual: 'Quote card with the patient’s name', media: { kind: 'quote' },
+      testimonial: { name: 'Priya S.', consent: 'none' },
+      quoteFreeCaption: 'Nervous about a root canal? Many of our patients are. Dr. Rao explains each step and checks in with you as you go.',
+      quoteFreeVisual: 'Quote card: “Nervous about a root canal?”',
+      caption: '“I was so scared of my root canal, but Dr. Rao made it easy. I would send my whole family here.” Priya S., patient' }
+  ];
+
+  /* ---------- Guardrail rules ---------- */
+  var TEXT_RULES = [
+    { id: 'absolute', label: 'Promise of results',
+      re: /\bguarantee[sd]?\b|\b100\s?%|\bcure[sd]?\b|\bno[- ]risk\b|\brisk[- ]free\b|\bpain[- ]?free\b|\bpainless\b/gi,
+      reason: 'This sounds like a promise. Every patient is different, so no clinic can promise a result. Patients may feel misled, and ad rules for clinics often do not allow it.' },
+    { id: 'superlative', label: 'Claim to be the best',
+      re: /\bbest\b|#\s?1\b|\bnumber one\b|\btop[- ]rated\b/gi,
+      reason: 'Saying you are the best is hard to prove. Patients may read it as a fact, and ad rules for clinics often ask you not to compare yourself this way.' }
+  ];
+  var OTHER_RULES = {
+    photo: { label: 'Patient photo without consent', reason: 'This shows a real patient, and their consent is marked “unknown”. Patients should say yes in writing before their photos are shared.' },
+    testimonial: { label: 'Patient quote without consent', reason: 'This is shown as a real patient’s words, but there is no record that they agreed to share it. Ask them first, or post it without the quote.' },
+    empty: { label: 'Caption is empty', reason: 'There is nothing to post yet. Write a caption or bring back the draft.' }
+  };
+  // Safer wording, most specific first. A swap is used when it covers the flagged words.
+  var SWAPS = [
+    [/gives guaranteed results in one visit/gi, 'can brighten your smile in one visit (results vary from person to person)'],
+    [/guaranteed results/gi, 'results many patients are happy with'],
+    [/\bguarantee[sd]?\b/gi, 'aim for'],
+    [/\b100\s?%\s?(safe|effective)/gi, 'very $1 for most people'],
+    [/\b100\s?%/gi, 'very'],
+    [/\bcure[sd]?\b/gi, 'help treat'],
+    [/\bno[- ]risk\b/gi, 'low risk for most people'],
+    [/\brisk[- ]free\b/gi, 'low risk for most people'],
+    [/\bpain[- ]?free\b/gi, 'comfortable'],
+    [/\bpainless\b/gi, 'gentle'],
+    [/\b(is|are) the best dentists? in the city/gi, '$1 a caring dental team in the city'],
+    [/\bthe best dentists? in the city/gi, 'a caring dental team in the city'],
+    [/\bthe best\b/gi, 'a great'],
+    [/\bbest\b/gi, 'great'],
+    [/#\s?1\b/gi, 'trusted local'],
+    [/\bnumber one\b/gi, 'trusted local'],
+    [/\btop[- ]rated\b/gi, 'well reviewed']
+  ];
+
+  /* ---------- Storage (always guarded) ---------- */
+  var memStore = {};
+  function storeGet(k) { try { var v = window.localStorage.getItem(k); return v === null && k in memStore ? memStore[k] : v; } catch (e) { return k in memStore ? memStore[k] : null; } }
+  function storeSet(k, v) { memStore[k] = v; try { window.localStorage.setItem(k, v); } catch (e) {} }
+  function storeDel(k) { delete memStore[k]; try { window.localStorage.removeItem(k); } catch (e) {} }
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function freshState() {
+    return {
+      v: 1, lastRoute: '#/welcome', phone: '',
+      ob: { step: 1, specialty: 'Dental', procedures: [], tone: 'Warm', rule: RULE_PRESETS[0], customRule: '', startedAt: null, firstApprovalMs: null, done: false },
+      items: SAMPLE.map(function (s) {
+        var it = clone(s);
+        it.original = s.caption; it.decision = null; it.override = ''; it.rejectReason = ''; it.fixed = false; it.preview = s.platform;
+        return it;
+      }),
+      audit: [], nextId: 1, flagged: {}, todayMs: 0
+    };
+  }
+  function validState(s) {
+    return s && s.v === 1 && s.ob && Array.isArray(s.items) && s.items.length === SAMPLE.length &&
+      s.items.every(function (it, i) { return it && it.id === SAMPLE[i].id && typeof it.caption === 'string'; }) &&
+      Array.isArray(s.audit) && typeof s.nextId === 'number';
+  }
+  function loadState() {
+    try { var raw = storeGet(KEY); if (!raw) return freshState(); var s = JSON.parse(raw); return validState(s) ? s : freshState(); }
+    catch (e) { return freshState(); }
+  }
+  var saveTimer = null;
+  function save() { clearTimeout(saveTimer); saveTimer = null; try { storeSet(KEY, JSON.stringify(state)); } catch (e) {} }
+  function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 300); }
+
+  function loadPrefs() { try { var p = JSON.parse(storeGet(PREFS_KEY) || '{}'); return p && typeof p === 'object' ? p : {}; } catch (e) { return {}; } }
+  function savePrefs() { try { storeSet(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
+
+  var state = loadState();
+  var prefs = loadPrefs();
+  if (prefs.theme !== 'light' && prefs.theme !== 'dark') prefs.theme = 'auto';
+  if (prefs.size !== 2 && prefs.size !== 3) prefs.size = 1;
+
+  /* ---------- Helpers ---------- */
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var app = $('#app');
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function icon(name, cls) { return '<svg class="i' + (cls ? ' ' + cls : '') + '" aria-hidden="true" focusable="false"><use href="#i-' + name + '"/></svg>'; }
+  function byId(id) { for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) return state.items[i]; return null; }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function fmt(ms) { var s = Math.max(0, Math.floor(ms / 1000)); var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60; return (h ? h + ':' + pad(m) : pad(m)) + ':' + pad(r); }
+  function clock(t) { var d = new Date(t); var h = d.getHours(), m = d.getMinutes(); var ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return h + ':' + pad(m) + ' ' + ap; }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  var reduceMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+
+  var liveTimer = null;
+  function announce(msg) {
+    var el = $('#live'); if (!el) return;
+    el.textContent = '';
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(function () { el.textContent = msg; }, 60);
+  }
+
+  function log(who, type, text, extra) {
+    extra = extra || {};
+    var e = { id: state.nextId++, t: Date.now(), who: who, type: type, text: text, itemId: extra.itemId || null, reason: extra.reason || '', phrase: extra.phrase || '', cat: extra.cat || '', undone: false };
+    state.audit.push(e);
+    return e.id;
+  }
+
+  /* ---------- Guardrail check ---------- */
+  function textFlags(caption) {
+    var found = [];
+    TEXT_RULES.forEach(function (r) {
+      r.re.lastIndex = 0; var m;
+      while ((m = r.re.exec(caption)) !== null) {
+        if (!m[0]) { r.re.lastIndex++; continue; }
+        found.push({ kind: 'text', rule: r.id, text: m[0], start: m.index, end: m.index + m[0].length });
+      }
+    });
+    found.sort(function (a, b) { return a.start - b.start; });
+    var out = [], last = -1;
+    found.forEach(function (f) { if (f.start >= last) { out.push(f); last = f.end; } });
+    return out;
+  }
+  function checkItem(it) {
+    var flags = it.caption.trim() ? textFlags(it.caption) : [{ kind: 'empty', rule: 'empty' }];
+    if (it.media && it.media.kind === 'patient' && it.media.consent !== 'confirmed') flags.push({ kind: 'photo', rule: 'photo' });
+    if (it.testimonial && it.testimonial.consent !== 'confirmed') flags.push({ kind: 'testimonial', rule: 'testimonial' });
+    return flags;
+  }
+  function ruleLabel(f) { if (f.kind === 'text') { for (var i = 0; i < TEXT_RULES.length; i++) if (TEXT_RULES[i].id === f.rule) return TEXT_RULES[i].label; } return OTHER_RULES[f.rule].label; }
+  function ruleReason(f) { if (f.kind === 'text') { for (var i = 0; i < TEXT_RULES.length; i++) if (TEXT_RULES[i].id === f.rule) return TEXT_RULES[i].reason; } return OTHER_RULES[f.rule].reason; }
+  function flagKey(f) { return f.rule + ':' + (f.text || '').toLowerCase(); }
+  function flagDesc(f) { return f.kind === 'text' ? '“' + f.text + '” (' + ruleLabel(f).toLowerCase() + ')' : ruleLabel(f).toLowerCase(); }
+
+  function matchCase(from, to) { return /^[A-Z]/.test(from) ? cap(to) : to; }
+  function suggestFor(caption, f) {
+    for (var i = 0; i < SWAPS.length; i++) {
+      var re = SWAPS[i][0], rep = SWAPS[i][1], m;
+      re.lastIndex = 0;
+      while ((m = re.exec(caption)) !== null) {
+        if (!m[0]) { re.lastIndex++; continue; }
+        var s = m.index, e = s + m[0].length;
+        if (s <= f.start && e >= f.end) {
+          var to = m[0].replace(new RegExp(re.source, 'i'), rep);
+          return { start: s, end: e, from: m[0], to: matchCase(m[0], to) };
+        }
+      }
+    }
+    return { start: f.start, end: f.end, from: f.text, to: '' };
+  }
+  function tidy(s) { return s.replace(/[ \t]{2,}/g, ' ').replace(/ ([.,!?])/g, '$1').replace(/^\s+/, ''); }
+
+  // Log what Penster flagged or cleared since the last check of this item.
+  function syncFlags(it) {
+    var now = checkItem(it), keys = now.map(flagKey);
+    var prev = state.flagged[it.id] || [];
+    now.forEach(function (f) { if (prev.indexOf(flagKey(f)) < 0) log('Penster', 'flag', 'Flagged ' + flagDesc(f), { itemId: it.id }); });
+    prev.forEach(function (k) {
+      if (keys.indexOf(k) < 0) {
+        var parts = k.split(':'), rule = parts[0], text = parts.slice(1).join(':');
+        var desc = text ? '“' + text + '”' : (OTHER_RULES[rule] ? OTHER_RULES[rule].label.toLowerCase() : rule);
+        log('Penster', 'clear', 'Cleared the flag on ' + desc, { itemId: it.id });
+      }
+    });
+    state.flagged[it.id] = keys;
+  }
+
+  var STATUS = {
+    ready: { label: 'Ready', tone: 'info', icon: 'dot' },
+    needs: { label: 'Needs a look', tone: 'warn', icon: 'alert' },
+    edited: { label: 'Edited', tone: 'neutral', icon: 'pencil' },
+    approved: { label: 'Approved', tone: 'ok', icon: 'check' },
+    rejected: { label: 'Rejected', tone: 'danger', icon: 'x' }
+  };
+  function statusOf(it) {
+    if (it.decision) return it.decision;
+    if (checkItem(it).length) return 'needs';
+    if (it.caption !== it.original || it.fixed) return 'edited';
+    return 'ready';
+  }
+  function chip(it) { var s = STATUS[statusOf(it)]; return '<span class="chip chip-' + s.tone + '">' + icon(s.icon) + '<span>' + s.label + '</span></span>'; }
+  function doneCount() { return state.items.filter(function (i) { return !!i.decision; }).length; }
+  function allDone() { return doneCount() === state.items.length; }
+  function savedMs() { return Math.max(0, doneCount() * MIN_PER_POST * 60000 - state.todayMs); }
+  function savedText() { var m = Math.round(savedMs() / 60000); return m < 1 ? 'under 1 min' : 'about ' + m + ' min'; }
+
+  /* ---------- Routing (location.hash so it works from file://) ---------- */
+  var navCount = 0;
+  var currentReview = null;
+  var transient = { logOpen: false, logFilter: 'all', batch: null, approveHint: '' };
+  function parseRoute() {
+    var h = (location.hash || '').replace(/^#\/?/, '');
+    var parts = h.split('/');
+    return { name: parts[0] || '', arg: parts[1] || '' };
+  }
+  var replacing = false;
+  function replaceHash(hash) { replacing = true; location.replace(hash); }
+  function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
+  function goBack(fallback) { if (navCount > 0) history.back(); else go(fallback); }
+  function redirectFor(r) {
+    var ob = state.ob;
+    var pre = ['', 'welcome', 'login', 'start'];
+    if (ob.done && pre.indexOf(r.name) >= 0) return '#/queue';
+    if (!ob.done && (r.name === 'queue' || r.name === 'review')) return ob.startedAt ? '#/start/' + ob.step : '#/welcome';
+    if (r.name === '') return '#/welcome';
+    if (r.name === 'start') {
+      var n = parseInt(r.arg, 10);
+      if (!(n >= 1 && n <= 3)) return '#/start/1';
+      if (n > ob.step) return '#/start/' + ob.step;
+    }
+    if (r.name === 'review' && !byId(r.arg)) return '#/queue';
+    if (['welcome', 'login', 'start', 'queue', 'review'].indexOf(r.name) < 0) return ob.done ? '#/queue' : '#/welcome';
+    if (r.name === 'login' && r.arg && r.arg !== 'not-found') return '#/login';
+    if (r.name === 'login' && r.arg === 'not-found' && !state.phone) return '#/login';
+    return null;
+  }
+
+  var firstRender = true;
+  function render(opts) {
+    opts = opts || {};
+    try {
+      if (currentReview) { var prevIt = byId(currentReview); if (prevIt) commitEdit(prevIt); }
+      var r = parseRoute();
+      var to = redirectFor(r);
+      if (to && to !== location.hash) { replaceHash(to); return; }
+      state.lastRoute = location.hash;
+      currentReview = r.name === 'review' ? r.arg : null;
+      var html;
+      switch (r.name) {
+        case 'welcome': html = screenWelcome(); break;
+        case 'login': html = r.arg === 'not-found' ? screenNotFound() : screenLogin(); break;
+        case 'start': html = r.arg === '1' ? screenStep1() : r.arg === '2' ? screenStep2() : screenStep3(); break;
+        case 'queue': html = screenQueue(); break;
+        case 'review': html = screenReview(byId(r.arg)); break;
+      }
+      app.innerHTML = html;
+      if (firstRender) { firstRender = false; opts.focus = false; } // leave focus alone on page load
+      if (r.name === 'review') lastSig = sigOf(byId(r.arg));
+      updateChrome();
+      save();
+      if (!opts.keepScroll) { var sc = $('#scroll'); if (sc) sc.scrollTop = 0; window.scrollTo(0, 0); }
+      var target = opts.focus ? $(opts.focus) : null;
+      if (!target) target = app.querySelector('h1');
+      if (target && opts.focus !== false) target.focus({ preventScroll: !!opts.keepScroll });
+    } catch (err) { crash(err); }
+  }
+
+  function crash(err) {
+    try { console.error(err); } catch (e) {}
+    app.innerHTML = '<section class="screen"><h1 tabindex="-1">Something went wrong</h1><p>The demo hit a snag. Your progress is saved on this device.</p>' +
+      '<div class="stack"><button type="button" class="btn btn-primary" data-action="reload">Try again</button>' +
+      '<button type="button" class="btn btn-secondary" data-action="reset-now">Reset demo</button></div></section>';
+  }
+
+  /* ---------- Chrome: timers, notes, prefs ---------- */
+  function updateChrome() {
+    var t = $('#signup-timer'), ob = state.ob;
+    if (!ob.startedAt) { t.hidden = true; }
+    else {
+      t.hidden = false;
+      var stopped = ob.firstApprovalMs != null;
+      t.className = 'timer' + (stopped ? ' stopped' : '');
+      var ms = stopped ? ob.firstApprovalMs : Date.now() - ob.startedAt;
+      t.innerHTML = icon(stopped ? 'check' : 'clock') + '<span>Signup to first approval: <b>' + fmt(ms) + '</b></span>';
+    }
+    var nf = $('#note-first'); if (nf) nf.textContent = ob.firstApprovalMs != null ? fmt(ob.firstApprovalMs) : (ob.startedAt ? 'Timer running' : 'Not started');
+    var nd = $('#note-done'); if (nd) nd.textContent = doneCount() + ' of ' + state.items.length;
+    var ns = $('#note-saved'); if (ns) ns.textContent = savedText();
+    var tt = $('#time-today'); if (tt) tt.textContent = fmt(state.todayMs);
+    document.querySelectorAll('.sizes button').forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-size')) === prefs.size)); });
+    var tb = $('#theme-btn span'); if (tb) tb.textContent = 'Theme: ' + cap(prefs.theme);
+  }
+  function applyPrefs() {
+    var root = document.documentElement;
+    var dark = prefs.theme === 'dark' || (prefs.theme === 'auto' && !(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches));
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    if (prefs.size === 1) root.removeAttribute('data-size'); else root.setAttribute('data-size', String(prefs.size));
+    updateChrome();
+  }
+  function syncNotesOpen() { var n = $('#notes'); if (n && window.matchMedia && matchMedia('(min-width: 900px)').matches) n.open = true; }
+
+  var lastTick = Date.now(), tickCount = 0;
+  setInterval(function () {
+    try {
+      var now = Date.now(), d = now - lastTick; lastTick = now;
+      if (document.visibilityState === 'visible' && state.ob.done && !allDone() && d < 5000) {
+        state.todayMs += d; tickCount++;
+        if (tickCount % 5 === 0) saveSoon();
+      }
+      updateChrome();
+    } catch (e) {}
+  }, 1000);
+
+  /* ---------- Screens ---------- */
+  function screenWelcome() {
+    return '<section class="screen welcome" aria-labelledby="h-welcome">' +
+      '<div class="hero" aria-hidden="true">' +
+        '<div class="hero-row"><span>Implant FAQ carousel</span>' + '<span class="chip chip-ok">' + icon('check') + 'Approved</span></div>' +
+        '<div class="hero-row"><span>Whitening offer</span>' + '<span class="chip chip-warn">' + icon('alert') + 'Needs a look</span></div>' +
+        '<div class="hero-row"><span>Cleaning reminder</span>' + '<span class="chip chip-info">' + icon('dot') + 'Ready</span></div>' +
+      '</div>' +
+      '<h1 id="h-welcome" tabindex="-1">Your clinic’s posts, checked and ready to approve.</h1>' +
+      '<p class="lead">Penster drafts your week. You read, tweak and approve in minutes. Risky claims get flagged before anything goes live.</p>' +
+      '<div class="stack" style="margin-top:.75rem">' +
+        '<a class="btn btn-primary btn-block" href="#/start/1" data-action="start">Create your clinic account</a>' +
+        '<a class="btn btn-secondary btn-block" href="#/login">Log in</a>' +
+      '</div>' +
+      '<p class="fine" style="margin-top:1rem">Demo only. No real account is created and no code is sent.</p>' +
+    '</section>';
+  }
+
+  function screenLogin() {
+    return '<section class="screen" aria-labelledby="h-login">' +
+      '<button type="button" class="back" data-action="back" data-fallback="#/welcome">' + icon('left') + 'Back</button>' +
+      '<h1 id="h-login" tabindex="-1">Log in</h1>' +
+      '<p class="lead">Enter the mobile number linked to your clinic.</p>' +
+      '<form data-form="login" novalidate>' +
+        '<div class="field"><label for="phone">Mobile number</label>' +
+        '<input id="phone" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="98765 43210" value="' + esc(state.phone) + '" aria-describedby="phone-error phone-hint">' +
+        '<p class="hint" id="phone-hint">We would send you a one-time code.</p>' +
+        '<p class="error" id="phone-error" role="alert"></p></div>' +
+        '<button type="submit" class="btn btn-primary btn-block">Send code</button>' +
+      '</form>' +
+      '<p class="fine" style="margin-top:1rem">Demo only. No code is sent and no account is checked.</p>' +
+    '</section>';
+  }
+
+  function screenNotFound() {
+    return '<section class="screen" aria-labelledby="h-nf">' +
+      '<button type="button" class="back" data-action="back" data-fallback="#/login">' + icon('left') + 'Back</button>' +
+      '<h1 id="h-nf" tabindex="-1">We could not find an account</h1>' +
+      '<p class="lead">No clinic account uses <strong>' + esc(state.phone) + '</strong> yet. That is easy to fix.</p>' +
+      '<div class="stack" style="margin-top:.5rem">' +
+        '<a class="btn btn-primary btn-block" href="#/start/1" data-action="start">Create your clinic account in 2 minutes</a>' +
+        '<button type="button" class="btn btn-secondary btn-block" data-action="book-call">' + icon('phone') + 'Book a setup call</button>' +
+        '<a class="btn btn-ghost btn-block" href="#/login">Try a different number</a>' +
+      '</div>' +
+      '<p class="fine" style="margin-top:1rem">We will keep the number you typed. Demo only: no real account is created.</p>' +
+    '</section>';
+  }
+
+  function progress(n) {
+    return '<div class="progress"><span>Step ' + n + ' of 3</span><div class="bars" aria-hidden="true">' +
+      [1, 2, 3].map(function (i) { return '<span class="' + (i <= n ? 'on' : '') + '"></span>'; }).join('') + '</div></div>';
+  }
+
+  function procedureOptions() {
+    var list = SPECIALTIES[state.ob.specialty] || [];
+    return list.map(function (p, i) {
+      var on = state.ob.procedures.indexOf(p) >= 0;
+      return '<label class="opt"><input type="checkbox" name="proc" value="' + esc(p) + '"' + (on ? ' checked' : '') + (i === 0 ? ' id="proc-first"' : '') + '><span>' + esc(p) + '</span></label>';
+    }).join('');
+  }
+
+  function screenStep1() {
+    var ob = state.ob;
+    return '<section class="screen" aria-labelledby="h-s1">' +
+      '<button type="button" class="back" data-action="back" data-fallback="#/welcome">' + icon('left') + 'Back</button>' +
+      progress(1) +
+      '<h1 id="h-s1" tabindex="-1">Tell us about your clinic</h1>' +
+      '<div class="clinic"><span class="avatar" aria-hidden="true">SS</span><div><strong>Smile Studio Dental</strong><br><span class="hint">Dr. Meera Rao · sample clinic for this demo</span></div></div>' +
+      '<form data-form="step1" novalidate>' +
+        '<div class="field"><label for="ob-phone">Mobile number <span class="hint">(optional)</span></label>' +
+        '<input id="ob-phone" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="98765 43210" value="' + esc(state.phone) + '"></div>' +
+        '<fieldset><legend>Specialty</legend><div class="options two">' +
+          Object.keys(SPECIALTIES).map(function (s) {
+            return '<label class="opt"><input type="radio" name="specialty" value="' + esc(s) + '"' + (ob.specialty === s ? ' checked' : '') + '><span>' + esc(s) + '</span></label>';
+          }).join('') +
+        '</div><p class="hint" style="margin-top:.5rem">This demo always shows dental sample posts.</p></fieldset>' +
+        '<fieldset aria-describedby="proc-error"><legend>Your top 2 procedures</legend>' +
+          '<div class="options two" id="proc-list">' + procedureOptions() + '</div>' +
+          '<p class="error" id="proc-error" role="alert" style="margin-top:.5rem"></p>' +
+        '</fieldset>' +
+        '<div class="push"><button type="submit" class="btn btn-primary btn-block">Continue</button></div>' +
+      '</form>' +
+    '</section>';
+  }
+
+  function screenStep2() {
+    var ob = state.ob;
+    var custom = ob.rule === RULE_PRESETS[3];
+    return '<section class="screen" aria-labelledby="h-s2">' +
+      '<button type="button" class="back" data-action="back" data-fallback="#/start/1">' + icon('left') + 'Back</button>' +
+      progress(2) +
+      '<h1 id="h-s2" tabindex="-1">How should your posts sound?</h1>' +
+      '<form data-form="step2" novalidate>' +
+        '<fieldset><legend>Tone</legend><div class="options">' +
+          TONES.map(function (t) {
+            return '<label class="opt"><input type="radio" name="tone" value="' + t.id + '"' + (ob.tone === t.id ? ' checked' : '') + '><span>' + t.id + '<small>' + esc(t.hint) + '</small></span><span class="sel">' + icon('check') + '</span></label>';
+          }).join('') +
+        '</div></fieldset>' +
+        '<fieldset><legend>Add one safety rule</legend><p class="hint" style="margin-bottom:.5rem">Penster checks every post against your rules before you see it.</p><div class="options">' +
+          RULE_PRESETS.map(function (r) {
+            return '<label class="opt"><input type="radio" name="rule" value="' + esc(r) + '"' + (ob.rule === r ? ' checked' : '') + '><span>' + esc(r) + '</span></label>';
+          }).join('') +
+        '</div>' +
+        '<div class="field" id="custom-rule-field" style="margin-top:.75rem"' + (custom ? '' : ' hidden') + '><label for="custom-rule">Your rule</label>' +
+          '<input id="custom-rule" name="custom-rule" type="text" autocomplete="off" placeholder="For example: never mention prices" value="' + esc(ob.customRule) + '" aria-describedby="rule-error">' +
+          '<p class="error" id="rule-error" role="alert"></p></div>' +
+        '</fieldset>' +
+        '<div class="push"><button type="submit" class="btn btn-primary btn-block">Continue</button></div>' +
+      '</form>' +
+    '</section>';
+  }
+
+  function ruleText() { return state.ob.rule === RULE_PRESETS[3] ? state.ob.customRule : state.ob.rule; }
+
+  function screenStep3() {
+    var ob = state.ob;
+    var flagged = state.items.filter(function (i) { return checkItem(i).length; });
+    var clean = state.items.length - flagged.length;
+    var procs = ob.procedures.length ? ob.procedures.join(' and ').toLowerCase() : 'your services';
+    return '<section class="screen" aria-labelledby="h-s3">' +
+      '<button type="button" class="back" data-action="back" data-fallback="#/start/2">' + icon('left') + 'Back</button>' +
+      progress(3) +
+      '<h1 id="h-s3" tabindex="-1">Your first week is ready</h1>' +
+      '<p class="lead">Penster drafted ' + state.items.length + ' posts for Smile Studio Dental in a ' + esc(ob.tone.toLowerCase()) + ' tone, with a focus on ' + esc(procs) + '.</p>' +
+      '<div class="big-stat">' +
+        '<div class="chip-ok"><strong>' + clean + '</strong>' + icon('check') + ' Ready to approve</div>' +
+        '<div class="chip-warn"><strong>' + flagged.length + '</strong>' + icon('alert') + ' Need a look</div>' +
+      '</div>' +
+      '<h2>Held for you to check</h2>' +
+      '<ul class="ready-list">' + flagged.map(function (i) {
+        return '<li><span>' + esc(i.title) + '</span><span class="chip chip-warn">' + icon('alert') + esc(ruleLabel(checkItem(i)[0])) + '</span></li>';
+      }).join('') + '</ul>' +
+      '<p class="hint">Your rule: “' + esc(ruleText()) + '”</p>' +
+      '<div class="push"><button type="button" class="btn btn-primary btn-block" data-action="finish-onboarding">Review your first post' + icon('right') + '</button></div>' +
+    '</section>';
+  }
+
+  function learnedLines() {
+    var live = state.audit.filter(function (a) { return !a.undone; });
+    var lines = [];
+    var rej = {};
+    live.filter(function (a) { return a.type === 'reject'; }).forEach(function (a) { rej[a.cat] = (rej[a.cat] || 0) + 1; });
+    Object.keys(rej).forEach(function (k) {
+      lines.push('You rejected ' + plural(rej[k], 'post') + ' as “' + esc(k) + '”. ' + (REJECT_LESSON[k] || ''));
+    });
+    var phr = {};
+    live.filter(function (a) { return a.type === 'removed' || a.type === 'rewrite'; }).forEach(function (a) { var k = a.phrase.toLowerCase(); if (k) phr[k] = (phr[k] || 0) + 1; });
+    Object.keys(phr).forEach(function (k) {
+      lines.push('You took out “' + esc(k) + '”' + (phr[k] > 1 ? ' ' + phr[k] + ' times' : '') + '. New drafts will avoid it.');
+    });
+    var tones = live.filter(function (a) { return a.type === 'tone'; });
+    if (tones.length > 1) lines.push('You changed your tone ' + plural(tones.length - 1, 'time') + '. New drafts use “' + esc(state.ob.tone) + '”.');
+    var overrides = live.filter(function (a) { return a.type === 'override'; }).length;
+    if (overrides) lines.push('You approved ' + plural(overrides, 'post') + ' with an open flag and said why. Penster will ask the team to review that rule.');
+    var plain = state.items.filter(function (i) { return i.decision === 'approved' && i.caption === i.original && !i.override; }).length;
+    if (plain) lines.push(plural(plain, 'post') + ' approved without changes. Penster will keep writing like this.');
+    return lines;
+  }
+
+  function learnHTML() {
+    var lines = learnedLines();
+    return '<section class="card learn" aria-labelledby="h-learn" id="learn">' +
+      '<div class="section-head"><h2 id="h-learn">What Penster learned from you</h2><span class="tag">' + icon('info') + 'demo logic</span></div>' +
+      (lines.length ? '<ul>' + lines.map(function (l) { return '<li>' + icon('bulb') + '<span>' + l + '</span></li>'; }).join('') + '</ul>'
+        : '<p class="hint">Nothing yet. Approve, edit or reject a post and this will show what Penster picked up.</p>') +
+      '<p class="fine">Counted from what you did on this page. No AI model is used here.</p>' +
+    '</section>';
+  }
+
+  function logItems(filter) {
+    var list = state.audit.slice().reverse().filter(function (a) { return filter === 'all' || a.itemId === filter; });
+    if (!list.length) return '<li class="empty">No activity yet.</li>';
+    return list.map(function (a) {
+      var it = a.itemId ? byId(a.itemId) : null;
+      return '<li class="by-' + a.who.toLowerCase() + (a.undone ? ' undone' : '') + '">' +
+        '<span class="what">' + esc(a.text) + '</span>' +
+        (a.reason ? '<span>Reason: <q>' + esc(a.reason) + '</q></span>' : '') +
+        '<span class="meta"><span class="who">' + esc(a.who) + '</span><span>' + clock(a.t) + '</span>' + (it ? '<span>' + esc(it.title) + '</span>' : '') + (a.undone ? '<span class="tag">Undone</span>' : '') + '</span>' +
+      '</li>';
+    }).join('');
+  }
+
+  function logHTML(fixedItem) {
+    var opts = '<option value="all">All posts</option>' + state.items.map(function (i) {
+      return '<option value="' + i.id + '"' + (transient.logFilter === i.id ? ' selected' : '') + '>' + esc(i.title) + '</option>';
+    }).join('');
+    if (fixedItem) {
+      var n = state.audit.filter(function (a) { return a.itemId === fixedItem.id; }).length;
+      return '<details class="card log" id="item-log"><summary>' + icon('clock') + 'Activity for this post (' + n + ')</summary><ol class="log-list">' + logItems(fixedItem.id) + '</ol></details>';
+    }
+    return '<details class="card log" id="log"' + (transient.logOpen ? ' open' : '') + '><summary>' + icon('clock') + 'Activity log (' + state.audit.length + ')</summary>' +
+      '<div class="field" style="margin:.75rem 0 0"><label for="log-filter">Show activity for</label><select id="log-filter">' + opts + '</select></div>' +
+      '<ol class="log-list" id="log-list" aria-live="off">' + logItems(transient.logFilter) + '</ol></details>';
+  }
+
+  function batchHTML() {
+    var b = transient.batch; if (!b) return '';
+    var held = b.held.map(function (h) { var it = byId(h); return it && !it.decision ? it : null; }).filter(Boolean);
+    return '<section class="card result" aria-labelledby="h-batch" id="batch">' +
+      '<h2 id="h-batch" tabindex="-1">' + (b.approved ? 'Approved ' + plural(b.approved, 'post') + '. ' : 'Nothing new to approve. ') + 'Held back ' + held.length + '.</h2>' +
+      (held.length ? '<p class="hint">These need you, because:</p><ul>' + held.map(function (it) {
+        return '<li><a href="#/review/' + it.id + '">' + esc(it.title) + '</a>: ' + checkItem(it).map(function (f) { return esc(ruleLabel(f).toLowerCase()); }).join(', ') + '</li>';
+      }).join('') + '</ul>' : '<p class="hint">Nothing was held back.</p>') +
+      '<button type="button" class="btn btn-ghost btn-small" data-action="dismiss-batch">Dismiss</button>' +
+    '</section>';
+  }
+
+  function screenQueue() {
+    var done = doneCount(), total = state.items.length;
+    var safeCount = state.items.filter(function (i) { return !i.decision && !checkItem(i).length; }).length;
+    var ob = state.ob;
+    var doneHTML = '';
+    if (allDone()) {
+      var ap = state.items.filter(function (i) { return i.decision === 'approved'; }).length;
+      doneHTML = '<section class="card done" aria-labelledby="h-done"><span class="done-icon">' + icon('check') + '</span>' +
+        '<h2 id="h-done">You are done for today</h2><p>All ' + total + ' posts are handled. Approved posts go out on schedule. Nothing else needs you.</p>' +
+        '<dl><div><dt>Time spent today</dt><dd>' + fmt(state.todayMs) + '</dd></div>' +
+        '<div><dt>Time saved <span class="tag">demo estimate</span></dt><dd>' + savedText() + '</dd></div>' +
+        '<div><dt>Approved</dt><dd>' + ap + '</dd></div><div><dt>Rejected</dt><dd>' + (total - ap) + '</dd></div></dl>' +
+        '<p class="fine" style="margin:.75rem 0 0">Time saved assumes about ' + MIN_PER_POST + ' minutes to write each post yourself.</p></section>';
+    }
+    return '<section class="screen" aria-labelledby="h-queue">' +
+      '<h1 id="h-queue" tabindex="-1">Today’s posts</h1>' +
+      '<p class="hint">Smile Studio Dental · Dr. Meera Rao</p>' +
+      '<div class="stats">' +
+        '<div class="stat"><span>Progress</span><b>' + done + ' of ' + total + ' done</b><div class="meter" aria-hidden="true"><i style="transform:scaleX(' + (done / total) + ')"></i></div></div>' +
+        '<div class="stat"><span>Time spent today</span><b id="time-today">' + fmt(state.todayMs) + '</b></div>' +
+      '</div>' +
+      doneHTML + batchHTML() +
+      (allDone() ? '' : '<div class="bulk"><button type="button" class="btn btn-primary btn-block" data-action="approve-all">' + icon('shield') + 'Approve all safe (' + safeCount + ')</button>' +
+        '<p class="hint">Approves only posts with no open flags. Flagged posts stay here for you.</p></div>') +
+      '<h2 class="sr-only">Posts</h2>' +
+      '<ul class="list">' + state.items.map(function (it) {
+        var flags = it.decision ? [] : checkItem(it);
+        return '<li><a class="row' + (it.decision ? ' decided' : '') + '" href="#/review/' + it.id + '">' +
+          '<span class="row-top"><span class="type">' + esc(it.type) + '</span><span class="plat">' + icon('clock') + esc(it.time) + '</span></span>' +
+          '<span class="row-title">' + esc(it.title) + '</span>' +
+          (flags.length ? '<span class="row-note">' + icon('alert') + '<span>' + flags.map(function (f) { return esc(ruleLabel(f)); }).join(', ') + '</span></span>' : '') +
+          '<span class="row-bottom"><span class="plat">' + icon(it.platform) + PLATFORMS[it.platform] + '</span>' + chip(it) + '</span>' +
+        '</a></li>';
+      }).join('') + '</ul>' +
+      learnHTML() +
+      '<section class="card" aria-labelledby="h-voice"><h2 id="h-voice">Your voice and rules</h2>' +
+        '<fieldset style="margin-bottom:.75rem"><legend>Tone for new drafts</legend><div class="seg">' +
+          TONES.map(function (t) { return '<label><input type="radio" name="tone-q" value="' + t.id + '"' + (ob.tone === t.id ? ' checked' : '') + '>' + t.id + '</label>'; }).join('') +
+        '</div></fieldset>' +
+        '<p class="hint" style="margin:0">Your safety rule: “' + esc(ruleText()) + '”</p>' +
+      '</section>' +
+      logHTML() +
+    '</section>';
+  }
+
+  function mediaHTML(it, platform) {
+    var kind = it.media ? it.media.kind : 'graphic';
+    var ic = kind === 'video' ? 'film' : kind === 'quote' ? 'quote' : 'image';
+    var shape = it.type === 'Story' || it.type === 'Reel script' ? 'tall' : platform === 'instagram' ? '' : 'wide';
+    var consent = '';
+    if (kind === 'patient') {
+      var ok = it.media.consent === 'confirmed';
+      consent = '<span class="chip ' + (ok ? 'chip-ok' : 'chip-warn') + ' consent">' + icon(ok ? 'check' : 'alert') + 'Patient consent: ' + (ok ? 'confirmed' : 'unknown') + '</span>';
+    } else if (it.testimonial) {
+      var okq = it.testimonial.consent === 'confirmed';
+      consent = '<span class="chip ' + (okq ? 'chip-ok' : 'chip-warn') + ' consent">' + icon(okq ? 'check' : 'alert') + 'Quote consent: ' + (okq ? 'confirmed' : 'none') + '</span>';
+    }
+    return '<div class="pv-media ' + shape + '"><span class="tag">' + esc(it.type) + '</span>' + icon(ic) + '<strong>' + esc(it.visual) + '</strong>' + consent + '</div>';
+  }
+
+  function highlight(text, flags) {
+    var out = '', i = 0;
+    flags.forEach(function (f) {
+      out += esc(text.slice(i, f.start));
+      out += '<mark class="flag">' + icon('alert') + '<span class="sr-only">Flagged: </span>' + esc(text.slice(f.start, f.end)) + '</mark>';
+      i = f.end;
+    });
+    out += esc(text.slice(i));
+    return out.replace(/\n/g, '<br>');
+  }
+
+  function previewHTML(it) {
+    var p = it.preview || it.platform;
+    var cap = it.caption.trim() ? highlight(it.caption, textFlags(it.caption)) : '<span class="hint">No caption yet.</span>';
+    var head = function (name, sub) {
+      return '<div class="pv-head"><span class="avatar" aria-hidden="true">SS</span><div><div class="pv-name">' + name + '</div><div class="pv-sub">' + sub + '</div></div><span class="pv-plat">' + icon(p) + PLATFORMS[p] + '</span></div>';
+    };
+    var act = function (arr) { return '<div class="pv-actions" aria-hidden="true">' + arr.map(function (a) { return '<span>' + icon(a[0]) + a[1] + '</span>'; }).join('') + '</div>'; };
+    var body;
+    if (p === 'instagram') {
+      body = head('smilestudiodental', 'Scheduled ' + esc(it.time)) + mediaHTML(it, p) + act([['heart', 'Like'], ['comment', 'Comment'], ['send', 'Share']]) +
+        '<div class="pv-cap"><b>smilestudiodental</b> ' + cap + '</div>';
+    } else if (p === 'facebook') {
+      body = head('Smile Studio Dental', 'Scheduled ' + esc(it.time)) + '<div class="pv-cap">' + cap + '</div>' + mediaHTML(it, p) + act([['like', 'Like'], ['comment', 'Comment'], ['share', 'Share']]);
+    } else {
+      body = head('Smile Studio Dental', 'Dental clinic · 1,240 followers') + '<div class="pv-cap">' + cap + '</div>' + mediaHTML(it, p) + act([['like', 'Like'], ['comment', 'Comment'], ['repost', 'Repost']]);
+    }
+    return '<div class="pv" aria-label="Preview on ' + PLATFORMS[p] + '" role="group">' + body + '</div>';
+  }
+
+  function flagsHTML(it) {
+    var flags = checkItem(it);
+    var head = '<h2 id="h-check" tabindex="-1">Safety check</h2>';
+    if (it.decision) {
+      return head + (it.override ? '<div class="banner banner-danger">' + icon('alert') + '<p>Approved with an open flag. Your reason: “' + esc(it.override) + '”</p></div>'
+        : '<div class="check-ok">' + icon('shield') + '<p>Checked before your decision.</p></div>');
+    }
+    if (!flags.length) return head + '<div class="check-ok">' + icon('shield') + '<p><strong>No issues found.</strong> This post passed the safety check.</p></div>';
+    var rule = ruleText();
+    return head + '<p class="flag-count">' + icon('alert') + plural(flags.length, 'issue') + ' to fix before you approve</p>' +
+      '<ol class="flag-list">' + flags.map(function (f, idx) {
+        var body = '';
+        if (f.kind === 'text') {
+          var s = suggestFor(it.caption, f);
+          body = '<p class="flag-quote">Flagged words: “<span>' + esc(f.text) + '</span>”</p><p>' + esc(ruleReason(f)) + '</p>' +
+            '<div class="suggest"><p class="s-label">Safer wording</p><p class="from">' + esc(s.from) + '</p>' +
+            (s.to ? '<p class="to">' + esc(s.to) + '</p>' : '<p class="to">Remove these words.</p>') +
+            '<button type="button" class="btn btn-secondary btn-small" data-action="apply-fix" data-index="' + idx + '">' + icon('check') + (s.to ? 'Use this wording' : 'Remove these words') + '</button></div>';
+        } else if (f.kind === 'photo') {
+          body = '<p>' + esc(ruleReason(f)) + '</p>' + (/before\/after/i.test(rule) ? '<p class="hint">This matches your rule: “' + esc(rule) + '”</p>' : '') +
+            '<div class="suggest"><p class="s-label">Safer option</p><p class="to">Use a stock image instead. The caption can stay.</p>' +
+            '<div class="row-btns"><button type="button" class="btn btn-secondary btn-small" data-action="photo-stock">' + icon('image') + 'Use a stock image</button>' +
+            '<button type="button" class="btn btn-ghost btn-small" data-action="photo-consent">Signed consent is on file</button></div></div>';
+        } else if (f.kind === 'testimonial') {
+          body = '<p>' + esc(ruleReason(f)) + '</p>' +
+            '<div class="suggest"><p class="s-label">Safer wording</p><p class="to">' + esc(it.quoteFreeCaption || '') + '</p>' +
+            '<div class="row-btns"><button type="button" class="btn btn-secondary btn-small" data-action="quote-drop">' + icon('check') + 'Post without the quote</button>' +
+            '<button type="button" class="btn btn-ghost btn-small" data-action="quote-consent">Priya agreed in writing</button></div></div>';
+        } else {
+          body = '<p>' + esc(ruleReason(f)) + '</p><div class="suggest"><button type="button" class="btn btn-secondary btn-small" data-action="restore">' + icon('undo') + 'Bring back the draft</button></div>';
+        }
+        return '<li class="flag-card"><p class="flag-head">' + icon('alert') + '<span class="tag">Flag</span><span>' + esc(ruleLabel(f)) + '</span></p>' + body + '</li>';
+      }).join('') + '</ol>' +
+      (flags.some(function (f) { return f.kind === 'empty'; }) ? '' :
+        '<div class="anyway"><p>Sure it is fine? You can approve it anyway. You will be asked for a short reason, and it is saved in the activity log.</p>' +
+        '<button type="button" class="btn btn-warn btn-small" data-action="approve-anyway">' + icon('alert') + 'Approve anyway…</button></div>');
+  }
+
+  function barHTML(it) {
+    if (it.decision) {
+      return '<div class="bar-btns two"><button type="button" class="btn btn-secondary" data-action="reopen">' + icon('undo') + 'Move back to review</button>' +
+        '<button type="button" class="btn btn-primary" data-action="next">' + nextLabel(it) + icon('right') + '</button></div>';
+    }
+    var flags = checkItem(it).length;
+    return '<div class="bar-btns">' +
+      '<button type="button" class="btn btn-secondary" data-action="reject">' + icon('x') + 'Reject</button>' +
+      '<button type="button" class="btn btn-secondary" data-action="edit">' + icon('pencil') + 'Edit</button>' +
+      '<button type="button" class="btn btn-primary" data-action="approve" id="approve-btn"' + (flags ? ' aria-disabled="true" aria-describedby="approve-hint"' : '') + '>' + icon(flags ? 'lock' : 'check') + 'Approve</button>' +
+    '</div><p class="hint" id="approve-hint">' + (flags ? (transient.approveHint || 'Fix ' + plural(flags, 'issue') + ' to approve.') : '') + '</p>';
+  }
+  function nextPending(it) {
+    var idx = state.items.indexOf(it);
+    for (var k = 1; k <= state.items.length; k++) { var n = state.items[(idx + k) % state.items.length]; if (!n.decision) return n; }
+    return null;
+  }
+  function nextLabel(it) { return nextPending(it) ? 'Next post' : 'All posts'; }
+
+  function screenReview(it) {
+    var idx = state.items.indexOf(it) + 1;
+    var banner = '';
+    if (it.decision === 'approved') banner = '<div class="banner banner-ok" id="decision-banner" tabindex="-1">' + icon('check') + '<p><strong>Approved.</strong> It will post ' + esc(it.time) + ' on ' + PLATFORMS[it.platform] + '.' +
+      (state.ob.firstApprovalMs != null && state.audit.some(function (a) { return a.type === 'milestone' && a.itemId === it.id; }) ? ' Your first approval came ' + fmt(state.ob.firstApprovalMs) + ' after signup.' : '') + '</p></div>';
+    if (it.decision === 'rejected') banner = '<div class="banner banner-danger" id="decision-banner" tabindex="-1">' + icon('x') + '<p><strong>Rejected.</strong> Reason: ' + esc(it.rejectReason) + '. Penster will not post it.</p></div>';
+    return '<section class="screen review" aria-labelledby="h-review">' +
+      '<a class="back" href="#/queue">' + icon('left') + 'All posts</a>' +
+      '<div class="review-meta"><span id="status-chip">' + chip(it) + '</span><span>' + esc(it.type) + '</span><span>·</span><span class="plat">' + icon(it.platform) + PLATFORMS[it.platform] + '</span><span>·</span><span>' + esc(it.time) + '</span><span class="sr-only">. Post ' + idx + ' of ' + state.items.length + '.</span></div>' +
+      '<h1 id="h-review" tabindex="-1">' + esc(it.title) + '</h1>' +
+      banner +
+      '<p class="why">' + icon('info') + '<span><strong>Why this post:</strong> ' + esc(it.why) + '</span></p>' +
+      '<div class="pv-wrap"><fieldset><legend class="hint" style="font-weight:600">Preview as</legend><div class="seg">' +
+        Object.keys(PLATFORMS).map(function (p) { return '<label><input type="radio" name="pv" value="' + p + '"' + ((it.preview || it.platform) === p ? ' checked' : '') + '>' + icon(p) + PLATFORMS[p] + '</label>'; }).join('') +
+      '</div></fieldset><div id="pv">' + previewHTML(it) + '</div></div>' +
+      '<div class="editor field"><label for="caption">Caption</label>' +
+        '<textarea id="caption" maxlength="2200" spellcheck="true" aria-describedby="caption-hint"' + (it.decision ? ' readonly' : '') + '>' + esc(it.caption) + '</textarea>' +
+        '<div class="editor-foot"><p class="hint" id="caption-hint">' + (it.decision ? 'Move it back to review to edit.' : 'The preview and safety check update as you type.') + '</p><p class="hint" id="char-count">' + it.caption.length + ' / 2200</p></div>' +
+      '</div>' +
+      '<section class="check" id="flags" aria-labelledby="h-check">' + flagsHTML(it) + '</section>' +
+      '<p class="fine legal">' + icon('info') + '<span>This is a simple demo of the idea, not legal advice.</span></p>' +
+      logHTML(it) +
+      '<div class="bar" id="bar">' + barHTML(it) + '</div>' +
+    '</section>';
+  }
+
+  /* ---------- Live updates on the review screen ---------- */
+  var lastSig = '', announceTimer = null;
+  function sigOf(it) { return it ? checkItem(it).map(flagKey).join('|') + '#' + statusOf(it) : ''; }
+  function refreshReview(it, opts) {
+    opts = opts || {};
+    var pv = $('#pv'); if (pv) pv.innerHTML = previewHTML(it);
+    var cc = $('#char-count'); if (cc) cc.textContent = it.caption.length + ' / 2200';
+    var sig = sigOf(it);
+    if (sig !== lastSig || opts.force) {
+      var before = lastSig ? lastSig.split('#')[0] : '';
+      lastSig = sig;
+      transient.approveHint = '';
+      var fl = $('#flags'); if (fl) fl.innerHTML = flagsHTML(it);
+      var bar = $('#bar'); if (bar) bar.innerHTML = barHTML(it);
+      var sc = $('#status-chip'); if (sc) sc.innerHTML = chip(it);
+      var n = checkItem(it).length;
+      var wasN = before ? before.split('|').length : 0;
+      clearTimeout(announceTimer);
+      if (!opts.quiet) {
+        announceTimer = setTimeout(function () {
+          if (n === 0) announce('All issues fixed. You can approve this post now.');
+          else if (n > wasN) announce('New flag: ' + plural(n, 'issue') + ' to fix. See the safety check.');
+          else announce(plural(n, 'issue') + ' left to fix.');
+        }, opts.now ? 0 : 500);
+      }
+    }
+    updateChrome();
+  }
+
+  var editBase = {};
+  function commitEdit(it) {
+    if (!it || it.decision) return;
+    var base = editBase[it.id];
+    if (base == null || base === it.caption) { editBase[it.id] = it.caption; return; }
+    var beforeFlags = textFlags(base).map(function (f) { return f.text.toLowerCase(); });
+    var nowText = it.caption.toLowerCase();
+    log('Doctor', 'edit', 'Edited the caption', { itemId: it.id });
+    beforeFlags.forEach(function (p) { if (nowText.indexOf(p) < 0) log('Doctor', 'removed', 'Took out “' + p + '”', { itemId: it.id, phrase: p }); });
+    syncFlags(it);
+    editBase[it.id] = it.caption;
+    save();
+  }
+
+  /* ---------- Decisions and undo ---------- */
+  var undo = null, undoTimer = null, undoTick = null;
+  function snap(it) { return { id: it.id, decision: it.decision, override: it.override, rejectReason: it.rejectReason }; }
+  function setUndo(snaps, logIds, msg) {
+    clearUndo();
+    undo = { snaps: snaps, logIds: logIds, until: Date.now() + UNDO_MS, msg: msg };
+    var t = $('#toast');
+    $('#toast-msg').textContent = msg;
+    $('#toast-count').textContent = '6s';
+    var bar = $('#toast-bar'); var nb = bar.cloneNode(true); bar.parentNode.replaceChild(nb, bar); // restart the bar animation
+    t.hidden = false;
+    undoTimer = setTimeout(clearUndo, UNDO_MS);
+    undoTick = setInterval(function () { if (!undo) return; $('#toast-count').textContent = Math.max(0, Math.ceil((undo.until - Date.now()) / 1000)) + 's'; }, 250);
+  }
+  function clearUndo() {
+    clearTimeout(undoTimer); clearInterval(undoTick); undo = null;
+    var t = $('#toast');
+    if (t) {
+      var hadFocus = t.contains(document.activeElement);
+      t.hidden = true;
+      if (hadFocus) { var h = app.querySelector('h1'); if (h) h.focus(); }
+    }
+  }
+  function doUndo() {
+    if (!undo) return;
+    var u = undo;
+    u.snaps.forEach(function (s) { var it = byId(s.id); if (it) { it.decision = s.decision; it.override = s.override; it.rejectReason = s.rejectReason; } });
+    u.logIds.forEach(function (id) { for (var i = 0; i < state.audit.length; i++) if (state.audit[i].id === id) state.audit[i].undone = true; });
+    log('Doctor', 'undo', 'Undid: ' + u.msg.replace(/\.$/, ''), { itemId: u.snaps.length === 1 ? u.snaps[0].id : null });
+    if (u.batch) transient.batch = null;
+    clearUndo();
+    save();
+    render({ keepScroll: true });
+    announce('Undone. ' + plural(u.snaps.length, 'post is', 'posts are') + ' back in your queue.');
+  }
+
+  function markFirstApproval(it) {
+    if (state.ob.firstApprovalMs == null && state.ob.startedAt) {
+      state.ob.firstApprovalMs = Date.now() - state.ob.startedAt;
+      log('Penster', 'milestone', 'First approval, ' + fmt(state.ob.firstApprovalMs) + ' after signup', { itemId: it.id });
+      return true;
+    }
+    return false;
+  }
+
+  function approve(it, overrideReason) {
+    if (!it || it.decision) return;
+    var flags = checkItem(it);
+    if (flags.length && !overrideReason) {
+      transient.approveHint = 'Approve is locked while ' + plural(flags.length, 'issue is', 'issues are') + ' open. Fix it above, or choose “Approve anyway”.';
+      var h = $('#approve-hint'); if (h) h.textContent = transient.approveHint;
+      announce(transient.approveHint);
+      return;
+    }
+    commitEdit(it);
+    var s = [snap(it)];
+    it.decision = 'approved'; it.override = overrideReason || '';
+    var ids = [log('Doctor', overrideReason ? 'override' : 'approve', overrideReason ? 'Approved with an open flag (' + flags.map(function (f) { return ruleLabel(f).toLowerCase(); }).join(', ') + ')' : 'Approved', { itemId: it.id, reason: overrideReason })];
+    var first = markFirstApproval(it);
+    save();
+    render({ keepScroll: false, focus: '#decision-banner' });
+    var msg = first ? 'Approved. First approval in ' + fmt(state.ob.firstApprovalMs) + '.' : 'Approved “' + it.title + '”.';
+    setUndo(s, ids, msg);
+    announce(msg + ' Undo is available for 6 seconds.');
+  }
+
+  function reject(it, reason, cat) {
+    if (!it || it.decision) return;
+    commitEdit(it);
+    var s = [snap(it)];
+    it.decision = 'rejected'; it.rejectReason = reason;
+    var ids = [log('Doctor', 'reject', 'Rejected', { itemId: it.id, reason: reason, cat: cat })];
+    save();
+    render({ focus: '#decision-banner' });
+    var msg = 'Rejected “' + it.title + '”.';
+    setUndo(s, ids, msg);
+    announce(msg + ' Reason: ' + reason + '. Undo is available for 6 seconds.');
+  }
+
+  function approveAll() {
+    var pending = state.items.filter(function (i) { return !i.decision; });
+    var safe = pending.filter(function (i) { return !checkItem(i).length; });
+    var held = pending.filter(function (i) { return checkItem(i).length; });
+    var snaps = [], ids = [];
+    safe.forEach(function (it) {
+      commitEdit(it);
+      snaps.push(snap(it));
+      it.decision = 'approved'; it.override = '';
+      ids.push(log('Doctor', 'approve', 'Approved with “Approve all safe”', { itemId: it.id }));
+    });
+    if (safe.length) markFirstApproval(safe[0]);
+    if (held.length) log('Penster', 'held', 'Held back ' + plural(held.length, 'post') + ' with open flags');
+    transient.batch = { approved: safe.length, held: held.map(function (i) { return i.id; }) };
+    save();
+    render({ focus: '#h-batch' });
+    var msg = 'Approved ' + safe.length + '. Held back ' + held.length + '.';
+    if (safe.length) { setUndo(snaps, ids, msg); undo.batch = true; }
+    announce(msg + (safe.length ? ' Undo is available for 6 seconds.' : ''));
+  }
+
+  /* ---------- Dialogs ---------- */
+  var sheet = $('#sheet'), lastFocus = null;
+  function openSheet(html) {
+    lastFocus = document.activeElement;
+    sheet.innerHTML = '<div class="sheet-body">' + html + '</div>';
+    try { if (sheet.open) sheet.close(); sheet.showModal(); } catch (e) { sheet.setAttribute('open', ''); }
+    var f = sheet.querySelector('[autofocus], input, textarea, button');
+    if (f) f.focus();
+  }
+  function closeSheet() {
+    try { sheet.close(); } catch (e) { sheet.removeAttribute('open'); }
+  }
+  sheet.addEventListener('close', function () {
+    if (lastFocus && document.contains(lastFocus)) { try { lastFocus.focus(); } catch (e) {} }
+    lastFocus = null;
+  });
+  sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); }); // tap on the backdrop
+
+  function sheetReject() {
+    openSheet('<h2 id="sheet-title">Why are you rejecting this post?</h2><p class="hint">One tap is enough. Penster uses this to write better drafts.</p>' +
+      '<form data-form="reject" novalidate><fieldset style="margin:0"><legend class="sr-only">Reason</legend><div class="options">' +
+      REJECT_REASONS.map(function (r, i) { return '<label class="opt"><input type="radio" name="reason" value="' + r + '"' + (i === 0 ? ' autofocus' : '') + '><span>' + r + '</span></label>'; }).join('') +
+      '</div></fieldset>' +
+      '<div class="field" id="other-field" hidden style="margin-top:.75rem"><label for="other-text">Tell us more</label><input id="other-text" type="text" autocomplete="off" placeholder="For example: we stopped offering this"></div>' +
+      '<p class="error" id="reject-error" role="alert" style="margin-top:.5rem"></p>' +
+      '<div class="sheet-btns"><button type="button" class="btn btn-secondary" data-action="close-sheet">Cancel</button><button type="submit" class="btn btn-danger">' + icon('x') + 'Reject post</button></div></form>');
+  }
+  function sheetAnyway(it) {
+    var flags = checkItem(it);
+    openSheet('<h2 id="sheet-title">Approve with an open flag?</h2>' +
+      '<p>Open: ' + flags.map(function (f) { return esc(ruleLabel(f).toLowerCase()); }).join(', ') + '. Penster will post it as it is.</p>' +
+      '<form data-form="anyway" novalidate><div class="field"><label for="anyway-reason">Your reason</label>' +
+      '<textarea id="anyway-reason" style="min-height:6rem" placeholder="For example: Priya signed a consent form on 12 Oct" aria-describedby="anyway-hint anyway-error"></textarea>' +
+      '<p class="hint" id="anyway-hint">At least 10 characters. Saved in the activity log with your name.</p>' +
+      '<p class="error" id="anyway-error" role="alert"></p></div>' +
+      '<div class="sheet-btns"><button type="button" class="btn btn-secondary" data-action="close-sheet">Cancel</button><button type="submit" class="btn btn-warn">' + icon('alert') + 'Approve with my reason</button></div></form>');
+  }
+  function sheetCall() {
+    openSheet('<h2 id="sheet-title">Setup call requested</h2>' +
+      '<p>In the real app, the Penster team would call <strong>' + esc(state.phone || 'you') + '</strong> to set up your clinic.</p>' +
+      '<p class="hint">Demo only: no call is booked and nothing is sent.</p>' +
+      '<div class="sheet-btns"><button type="button" class="btn btn-secondary" data-action="close-sheet" autofocus>Close</button><button type="button" class="btn btn-primary" data-action="start-from-sheet">Create account instead</button></div>');
+  }
+  function sheetReset() {
+    openSheet('<h2 id="sheet-title">Reset the demo?</h2><p>This clears your progress, edits and activity log on this device. You will start again at the welcome screen.</p>' +
+      '<div class="sheet-btns"><button type="button" class="btn btn-secondary" data-action="close-sheet" autofocus>Cancel</button><button type="button" class="btn btn-danger" data-action="reset-now">' + icon('reset') + 'Reset demo</button></div>');
+  }
+
+  function resetDemo() {
+    clearUndo(); closeSheet();
+    storeDel(KEY);
+    state = freshState(); editBase = {}; currentReview = null;
+    transient = { logOpen: false, logFilter: 'all', batch: null, approveHint: '' };
+    save();
+    navCount = 0;
+    if (location.hash === '#/welcome') render(); else replaceHash('#/welcome');
+    announce('Demo reset. You are back at the welcome screen.');
+  }
+
+  function startSignup() {
+    if (!state.ob.startedAt) { state.ob.startedAt = Date.now(); save(); }
+  }
+
+  /* ---------- Events ---------- */
+  function safe(fn) { return function (e) { try { fn(e); } catch (err) { crash(err); } }; }
+
+  document.addEventListener('click', safe(function (e) {
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    var a = el.getAttribute('data-action');
+    var it = currentReview ? byId(currentReview) : null;
+    switch (a) {
+      case 'start': startSignup(); break; // the link navigates on its own
+      case 'skip': e.preventDefault(); $('#app-main').focus(); break; // keep the route hash intact
+      case 'start-from-sheet': closeSheet(); startSignup(); go('#/start/1'); break;
+      case 'back': goBack(el.getAttribute('data-fallback') || '#/welcome'); break;
+      case 'book-call': sheetCall(); break;
+      case 'close-sheet': closeSheet(); break;
+      case 'reset': sheetReset(); break;
+      case 'reset-now': resetDemo(); break;
+      case 'reload': render(); break;
+      case 'text-size': prefs.size = Number(el.getAttribute('data-size')) || 1; savePrefs(); applyPrefs(); announce('Text size ' + ['default', 'large', 'larger'][prefs.size - 1] + '.'); break;
+      case 'theme': prefs.theme = prefs.theme === 'auto' ? 'dark' : prefs.theme === 'dark' ? 'light' : 'auto'; savePrefs(); applyPrefs(); announce('Theme: ' + prefs.theme + '.'); break;
+      case 'finish-onboarding':
+        if (!state.ob.done) {
+          state.ob.done = true;
+          log('Doctor', 'tone', 'Set tone to ' + state.ob.tone);
+          log('Doctor', 'rule', 'Added safety rule: “' + ruleText() + '”');
+          log('Penster', 'draft', 'Drafted ' + state.items.length + ' posts for your first week');
+          state.items.forEach(syncFlags);
+          save();
+        }
+        go('#/review/' + state.items[0].id);
+        break;
+      case 'approve': approve(it); break;
+      case 'approve-anyway': if (it) sheetAnyway(it); break;
+      case 'reject': if (it) sheetReject(); break;
+      case 'edit': {
+        var ta = $('#caption');
+        if (ta) { ta.focus(); var L = ta.value.length; ta.setSelectionRange(L, L); ta.scrollIntoView({ block: 'center', behavior: reduceMotion.matches ? 'auto' : 'smooth' }); announce('Editing the caption.'); }
+        break;
+      }
+      case 'apply-fix': {
+        if (!it || it.decision) break;
+        var flags = checkItem(it), f = flags[Number(el.getAttribute('data-index'))];
+        if (!f || f.kind !== 'text') break;
+        commitEdit(it);
+        var sg = suggestFor(it.caption, f);
+        it.caption = tidy(it.caption.slice(0, sg.start) + sg.to + it.caption.slice(sg.end));
+        log('Doctor', 'rewrite', 'Used safer wording instead of “' + sg.from + '”', { itemId: it.id, phrase: f.text });
+        syncFlags(it); editBase[it.id] = it.caption;
+        var ta2 = $('#caption'); if (ta2) ta2.value = it.caption;
+        save();
+        refreshReview(it, { force: true, quiet: true });
+        $('#h-check').focus();
+        var left = checkItem(it).length;
+        announce('Wording updated. ' + (left ? plural(left, 'issue') + ' left.' : 'No issues left. You can approve now.'));
+        break;
+      }
+      case 'photo-stock':
+        if (!it) break;
+        it.media = { kind: 'stock' }; it.visual = it.stockVisual || 'Stock image'; it.fixed = true;
+        log('Doctor', 'fix', 'Swapped the patient photo for a stock image', { itemId: it.id });
+        afterFix(it, 'Photo swapped for a stock image.');
+        break;
+      case 'photo-consent':
+        if (!it) break;
+        it.media.consent = 'confirmed'; it.fixed = true;
+        log('Doctor', 'fix', 'Confirmed signed photo consent is on file', { itemId: it.id });
+        afterFix(it, 'Photo consent marked as confirmed.');
+        break;
+      case 'quote-drop':
+        if (!it) break;
+        commitEdit(it);
+        it.caption = it.quoteFreeCaption || it.caption; it.visual = it.quoteFreeVisual || it.visual; it.testimonial = null; it.media = { kind: 'graphic' }; it.fixed = true;
+        log('Doctor', 'fix', 'Removed the patient quote and name', { itemId: it.id });
+        var ta3 = $('#caption'); if (ta3) ta3.value = it.caption;
+        editBase[it.id] = it.caption;
+        afterFix(it, 'Quote removed. The post no longer names a patient.');
+        break;
+      case 'quote-consent':
+        if (!it) break;
+        it.testimonial.consent = 'confirmed'; it.fixed = true;
+        log('Doctor', 'fix', 'Confirmed the patient agreed in writing to share the quote', { itemId: it.id });
+        afterFix(it, 'Quote consent marked as confirmed.');
+        break;
+      case 'restore':
+        if (!it) break;
+        it.caption = it.original; editBase[it.id] = it.caption;
+        var ta4 = $('#caption'); if (ta4) ta4.value = it.caption;
+        log('Doctor', 'fix', 'Brought back the draft caption', { itemId: it.id });
+        afterFix(it, 'Draft caption is back.');
+        break;
+      case 'reopen':
+        if (!it) break;
+        clearUndo();
+        it.decision = null; it.override = ''; it.rejectReason = '';
+        log('Doctor', 'reopen', 'Moved back to review', { itemId: it.id });
+        save(); render(); announce('Moved back to review.');
+        break;
+      case 'next': { var n = it ? nextPending(it) : null; go(n ? '#/review/' + n.id : '#/queue'); break; }
+      case 'approve-all': approveAll(); break;
+      case 'dismiss-batch': transient.batch = null; render({ keepScroll: true }); break;
+      case 'undo': doUndo(); break;
+    }
+  }));
+
+  function afterFix(it, msg) {
+    syncFlags(it); save();
+    refreshReview(it, { force: true, quiet: true });
+    var h = $('#h-check'); if (h) h.focus();
+    var left = checkItem(it).length;
+    announce(msg + ' ' + (left ? plural(left, 'issue') + ' left.' : 'No issues left. You can approve now.'));
+  }
+
+  function digits(s) { return (s.match(/\d/g) || []).length; }
+
+  document.addEventListener('submit', safe(function (e) {
+    var form = e.target.closest('[data-form]'); if (!form) return;
+    e.preventDefault();
+    var kind = form.getAttribute('data-form');
+    if (kind === 'login') {
+      var inp = $('#phone'), v = inp.value.trim(), err = $('#phone-error');
+      if (digits(v) < 7) { inp.setAttribute('aria-invalid', 'true'); err.innerHTML = icon('alert') + '<span>Enter a mobile number with at least 7 digits.</span>'; inp.focus(); return; }
+      inp.removeAttribute('aria-invalid'); err.textContent = '';
+      state.phone = v; save(); go('#/login/not-found');
+    } else if (kind === 'step1') {
+      var ph = $('#ob-phone'); if (ph) state.phone = ph.value.trim();
+      if (!state.ob.procedures.length) {
+        $('#proc-error').innerHTML = icon('alert') + '<span>Pick 1 or 2 procedures to continue.</span>';
+        var first = $('#proc-first'); if (first) first.focus();
+        return;
+      }
+      state.ob.step = Math.max(state.ob.step, 2); save(); go('#/start/2');
+    } else if (kind === 'step2') {
+      if (state.ob.rule === RULE_PRESETS[3]) {
+        var cr = $('#custom-rule'), val = cr.value.trim();
+        if (val.length < 5) { cr.setAttribute('aria-invalid', 'true'); $('#rule-error').innerHTML = icon('alert') + '<span>Write your rule in a few words, or pick one above.</span>'; cr.focus(); return; }
+        state.ob.customRule = val;
+      }
+      state.ob.step = 3; save(); go('#/start/3');
+    } else if (kind === 'reject') {
+      var it = byId(currentReview); if (!it) return;
+      var sel = form.querySelector('input[name="reason"]:checked');
+      var rerr = $('#reject-error');
+      if (!sel) { rerr.innerHTML = icon('alert') + '<span>Pick a reason.</span>'; form.querySelector('input[name="reason"]').focus(); return; }
+      var reason = sel.value, cat = sel.value;
+      if (reason === 'Other') {
+        var ot = $('#other-text'), tv = ot.value.trim();
+        if (!tv) { rerr.innerHTML = icon('alert') + '<span>Add a few words so the team knows why.</span>'; ot.focus(); return; }
+        reason = 'Other: ' + tv;
+      }
+      closeSheet(); reject(it, reason, cat);
+    } else if (kind === 'anyway') {
+      var it2 = byId(currentReview); if (!it2) return;
+      var ar = $('#anyway-reason'), av = ar.value.trim();
+      if (av.length < 10) { ar.setAttribute('aria-invalid', 'true'); $('#anyway-error').innerHTML = icon('alert') + '<span>Please write at least 10 characters. Right now: ' + av.length + '.</span>'; ar.focus(); return; }
+      closeSheet(); approve(it2, av);
+    }
+  }));
+
+  document.addEventListener('input', safe(function (e) {
+    var t = e.target;
+    if (t.id === 'caption') {
+      var it = byId(currentReview); if (!it || it.decision) return;
+      if (editBase[it.id] == null) editBase[it.id] = it.caption;
+      it.caption = t.value; saveSoon(); refreshReview(it);
+    } else if (t.id === 'phone' || t.id === 'custom-rule' || t.id === 'anyway-reason') {
+      if (t.getAttribute('aria-invalid')) { t.removeAttribute('aria-invalid'); var er = t.parentNode.querySelector('.error'); if (er) er.textContent = ''; }
+    }
+  }));
+
+  document.addEventListener('focusin', function (e) {
+    if (e.target.id === 'caption') { var it = byId(currentReview); if (it && editBase[it.id] == null) editBase[it.id] = it.caption; }
+  });
+
+  document.addEventListener('change', safe(function (e) {
+    var t = e.target;
+    if (t.id === 'caption') { var it = byId(currentReview); if (it) { commitEdit(it); refreshReview(it, { quiet: true }); } return; }
+    if (t.name === 'specialty') {
+      state.ob.specialty = t.value; state.ob.procedures = [];
+      $('#proc-list').innerHTML = procedureOptions(); $('#proc-error').textContent = '';
+      save(); return;
+    }
+    if (t.name === 'proc') {
+      var err = $('#proc-error');
+      if (t.checked) {
+        if (state.ob.procedures.length >= 2) { t.checked = false; err.innerHTML = icon('alert') + '<span>You can pick up to 2. Uncheck one first.</span>'; return; }
+        state.ob.procedures.push(t.value);
+      } else {
+        state.ob.procedures = state.ob.procedures.filter(function (p) { return p !== t.value; });
+      }
+      err.textContent = ''; save(); return;
+    }
+    if (t.name === 'tone') { state.ob.tone = t.value; save(); return; }
+    if (t.name === 'rule') {
+      state.ob.rule = t.value; save();
+      var cf = $('#custom-rule-field'); if (cf) cf.hidden = t.value !== RULE_PRESETS[3];
+      return;
+    }
+    if (t.name === 'tone-q') {
+      var from = state.ob.tone; if (from === t.value) return;
+      state.ob.tone = t.value;
+      log('Doctor', 'tone', 'Changed tone from ' + from + ' to ' + t.value);
+      save();
+      var l = $('#learn'); if (l) l.outerHTML = learnHTML();
+      var lg = $('#log-list'); if (lg) lg.innerHTML = logItems(transient.logFilter);
+      announce('Tone set to ' + t.value + ' for new drafts.');
+      return;
+    }
+    if (t.name === 'pv') {
+      var it2 = byId(currentReview); if (!it2) return;
+      it2.preview = t.value; save();
+      $('#pv').innerHTML = previewHTML(it2);
+      announce('Showing the ' + PLATFORMS[t.value] + ' preview.');
+      return;
+    }
+    if (t.name === 'reason') { var of = $('#other-field'); if (of) of.hidden = t.value !== 'Other'; $('#reject-error').textContent = ''; return; }
+    if (t.id === 'log-filter') { transient.logFilter = t.value; $('#log-list').innerHTML = logItems(t.value); return; }
+  }));
+
+  document.addEventListener('toggle', function (e) { if (e.target && e.target.id === 'log') transient.logOpen = e.target.open; }, true);
+
+  document.addEventListener('keydown', safe(function (e) {
+    var k = e.key && e.key.toLowerCase();
+    if (k === 'z' && (e.metaKey || e.ctrlKey) && undo) {
+      var tag = (document.activeElement && document.activeElement.tagName) || '';
+      if (tag !== 'TEXTAREA' && tag !== 'INPUT') { e.preventDefault(); doUndo(); }
+    }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && e.target.id === 'anyway-reason') { e.preventDefault(); e.target.form.requestSubmit(); }
+  }));
+
+  window.addEventListener('hashchange', function () { if (replacing) replacing = false; else navCount++; render(); });
+  window.addEventListener('pagehide', function () { var it = currentReview && byId(currentReview); if (it) commitEdit(it); save(); });
+  document.addEventListener('visibilitychange', function () { lastTick = Date.now(); if (document.visibilityState === 'hidden') save(); });
+  window.addEventListener('error', function (e) { if (!app.innerHTML) crash(e.error || e.message); });
+  if (window.matchMedia) {
+    var mq = matchMedia('(prefers-color-scheme: light)');
+    if (mq.addEventListener) mq.addEventListener('change', function () { if (prefs.theme === 'auto') applyPrefs(); });
+    var wide = matchMedia('(min-width: 900px)');
+    if (wide.addEventListener) wide.addEventListener('change', syncNotesOpen);
+  }
+
+  /* ---------- Start ---------- */
+  applyPrefs();
+  syncNotesOpen();
+  if (!location.hash || location.hash === '#' || location.hash === '#/') {
+    replaceHash(state.lastRoute && state.lastRoute.indexOf('#/') === 0 ? state.lastRoute : '#/welcome');
+  } else {
+    render({ focus: false });
+  }
+  window.__demo = { state: function () { return state; }, checkItem: function (id) { return checkItem(byId(id)); } };
+})();
+</script>
+</body>
+</html>
