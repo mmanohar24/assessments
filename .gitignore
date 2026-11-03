@@ -1,0 +1,4 @@
+# Private working files: audit notes and third-party screenshots, kept local
+docs/phonely-audit.md
+docs/phonely-audit/
+.DS_Store
