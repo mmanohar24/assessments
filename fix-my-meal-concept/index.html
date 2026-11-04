@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your meal: Fix my meal</title>
+<meta name="description" content="An independent design concept: fix a photo-logged meal in plain words, using rotis, katoris and ladles. Not made by or affiliated with Healthify. Demo data only.">
+<meta name="theme-color" content="#1e2a5a">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<link rel="preload" href="/fonts/anek-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face { font-family: "Anek Latin"; src: url(/fonts/anek-latin-var.woff2) format("woff2"); font-weight: 100 800; font-stretch: 75% 125%; font-display: swap; }
+
+:root {
+  color-scheme: light;
+  --ink: #1e2a5a;      /* what you told me */
+  --ink-hover: #111a42;
+  --haldi: #ffd84d;    /* what I guessed */
+  --muted: #4c5570;
+  --line: #c7ccd6;
+  --paper: #fbfbf8;
+  --steel: #d9dee1;
+  --chili: #a3211a;
+  --chili-wash: #fdeeec;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--steel);
+  color: var(--ink);
+  font: 400 17px/1.4 "Anek Latin", ui-sans-serif, system-ui, sans-serif;
+  -webkit-tap-highlight-color: rgba(30, 42, 90, .12);
+  touch-action: manipulation;
+}
+h1, h2, p, ul, table { margin: 0; padding: 0; }
+ul { list-style: none; }
+button, textarea { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+.notice :focus-visible, .btn.primary:focus-visible { outline-offset: 3px; }
+
+.skip { position: fixed; left: 12px; top: -80px; z-index: 5; background: var(--paper); padding: 12px 16px; border-radius: 8px; }
+.skip:focus { top: 12px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.stage { height: 100dvh; display: flex; justify-content: center; align-items: center; }
+.phone { width: 100%; height: 100dvh; background: var(--paper); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.notice { background: var(--ink); color: #fff; font-size: 14px; line-height: 1.3; padding: calc(8px + env(safe-area-inset-top)) 16px 8px; flex: none; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; outline: none; -webkit-overflow-scrolling: touch; }
+.bar { flex: none; display: flex; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line); }
+.pad { padding: 16px; }
+
+@media (min-width: 600px) {
+  .phone { width: 390px; height: min(844px, calc(100dvh - 40px)); border-radius: 32px; box-shadow: 0 1px 2px rgba(30, 42, 90, .18), 0 24px 60px rgba(30, 42, 90, .22); }
+  .notice { padding-top: 12px; }
+}
+
+/* Buttons */
+.btn { flex: 1 1 0; min-width: 0; min-height: 52px; padding: 8px 12px; border-radius: 12px; border: 2px solid var(--ink); background: transparent; font-weight: 600; font-size: 17px; line-height: 1.15; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color .15s, color .15s; }
+.btn.primary { background: var(--ink); color: #fff; }
+.btn:hover { background: #e6e8f0; }
+.btn.primary:hover { background: var(--ink-hover); }
+.btn.small { flex: none; min-height: 44px; font-size: 16px; padding: 6px 14px; }
+.back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; text-underline-offset: 3px; }
+.step { color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+
+/* Plate */
+.plate { display: block; width: 100%; height: auto; max-height: 26dvh; background: #2a3347; }
+.plate-wrap { position: relative; }
+.plate-tag { position: absolute; left: 10px; bottom: 8px; color: #fff; background: rgba(17, 26, 66, .8); font-size: 13px; line-height: 1; padding: 5px 8px; border-radius: 6px; }
+.plate .roti { transition: transform .5s cubic-bezier(.3, .7, .2, 1); }
+.plate .roti > g { transition: opacity .35s, transform .35s; transform-box: fill-box; transform-origin: center; }
+.plate .roti.gone > g { opacity: 0; transform: scale(.7); }
+.plate .food { transition: transform .5s cubic-bezier(.3, .7, .2, 1); transform-box: fill-box; transform-origin: center; }
+
+/* Numbers */
+h1 { font-size: 30px; line-height: 1.08; font-weight: 700; font-stretch: 88%; text-wrap: balance; overflow-wrap: anywhere; scroll-margin-top: 16px; outline: none; }
+h2 { font-size: 20px; line-height: 1.2; font-weight: 700; font-stretch: 92%; outline: none; }
+.sub { color: var(--muted); margin-top: 4px; }
+.total { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; margin-top: 10px; }
+.total b { font-size: 72px; line-height: .95; font-weight: 700; font-stretch: 75%; font-variant-numeric: tabular-nums; }
+.total span { font-size: 22px; font-weight: 600; }
+.total s { font-size: 24px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.macros { display: flex; flex-wrap: wrap; gap: 0 16px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.macros b { color: var(--ink); font-weight: 600; }
+section { margin-top: 20px; }
+
+/* Guess and yours: the colour is backed up by a written tag on every chip. */
+.chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.chip { min-height: 72px; min-width: 0; width: 100%; padding: 8px 10px; border-radius: 12px; border: 2px dashed var(--ink); background: var(--haldi); text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; gap: 2px; transition: background-color .2s, color .2s, border-color .2s; }
+.chip:hover { background: #ffcd1f; }
+.chip.you { background: var(--ink); border-style: solid; color: #fff; }
+.chip.you:hover { background: var(--ink-hover); }
+.chip[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); }
+.chip small { font-size: 14px; display: flex; justify-content: space-between; gap: 6px; line-height: 1.2; }
+.chip strong { font-size: 19px; line-height: 1.15; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.panel { grid-column: 1 / -1; padding: 12px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; }
+.stepper { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.stepper output { flex: 1; min-width: 0; text-align: center; font-weight: 600; font-size: 19px; font-variant-numeric: tabular-nums; }
+.round { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--ink); background: transparent; display: grid; place-items: center; cursor: pointer; transition: background-color .15s; }
+.round:hover { background: #e6e8f0; }
+.round:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Fix box */
+label.lead { display: block; font-weight: 600; margin-bottom: 6px; }
+textarea { display: block; width: 100%; min-height: 104px; padding: 12px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; font-size: 18px; line-height: 1.3; resize: vertical; }
+textarea::placeholder { color: var(--muted); }
+textarea[aria-invalid="true"] { border-color: var(--chili); }
+.err { color: var(--chili); margin-top: 6px; font-weight: 600; }
+.tries { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.try { min-height: 44px; padding: 6px 12px; border-radius: 22px; border: 1px solid var(--ink); background: #fff; cursor: pointer; text-align: left; line-height: 1.15; transition: background-color .15s; }
+.try:hover { background: #e6e8f0; }
+.rows { margin-top: 8px; border-top: 1px solid var(--line); }
+.rows li { padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; font-variant-numeric: tabular-nums; }
+.rows s { color: var(--muted); }
+.rows b { font-weight: 600; }
+.arrow { flex: none; }
+.diff { margin-top: 10px; font-weight: 600; }
+.slip { margin-top: 10px; padding: 12px; border: 2px solid var(--chili); border-radius: 12px; background: var(--chili-wash); }
+.slip p { color: var(--chili); font-weight: 600; }
+.slip .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.slip .btn { background: #fff; }
+.slip .btn:hover { background: #e6e8f0; }
+.unknown { margin-top: 10px; color: var(--muted); overflow-wrap: anywhere; }
+
+/* Bill */
+table { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
+th, td { padding: 10px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+thead th { font-size: 15px; font-weight: 400; color: var(--muted); padding-top: 0; padding-bottom: 6px; }
+td:last-child, th:last-child { text-align: right; white-space: nowrap; padding-left: 12px; }
+tbody th { font-weight: 400; overflow-wrap: anywhere; }
+td s, th s { color: var(--muted); display: block; font-size: 15px; }
+td b, th b { font-weight: 600; }
+tfoot th, tfoot td { font-weight: 700; border-bottom: 0; }
+
+/* Remember */
+.check { display: flex; gap: 10px; align-items: center; min-height: 48px; padding: 4px 0; cursor: pointer; }
+.check input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--ink); cursor: pointer; }
+.linkish { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 14px; }
+.tag.guess { background: var(--haldi); border: 1px dashed var(--ink); }
+.tag.you { background: var(--ink); color: #fff; border: 1px solid var(--ink); }
+.memo li { justify-content: space-between; min-height: 64px; }
+.memo .what { min-width: 0; flex: 1 1 140px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
+.why { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main" id="skip">Skip to content</a>
+<div class="stage">
+  <div class="phone">
+    <header class="notice">Independent concept. Not made by or affiliated with <span translate="no">Healthify</span>. Demo data only.</header>
+    <main class="scroll" id="main" tabindex="-1"></main>
+    <footer class="bar" id="bar"></footer>
+  </div>
+</div>
+<div class="sr" id="live" aria-live="polite"></div>
+
+<script>
+// All numbers are made up for this demo. Nothing is stored or sent anywhere.
+const ITEMS = {
+  roti:  { label: 'Roti',  kind: 'Count',   unit: 'roti',   guess: 3, max: 8, step: 1,   snap: 2, grams: 40,  per: { cal: 100, p: 3, c: 20, f: 1 },
+           why: 'Rotis hide under each other, so I counted the ones I could see.' },
+  dal:   { label: 'Dal',   kind: 'Portion', unit: 'katori', guess: 1, max: 4, step: .25, snap: 4, grams: 150, per: { cal: 130, p: 7, c: 20, f: 2 },
+           why: 'A katori is about 150 ml. A photo can’t show how deep it is.' },
+  sabzi: { label: 'Sabzi', kind: 'Portion', unit: 'katori', guess: 1, max: 4, step: .25, snap: 4, grams: 150, per: { cal: 90, p: 3, c: 14, f: 2 },
+           why: 'A katori is about 150 ml. A photo can’t show how deep it is.' },
+  oil:   { label: 'Oil',   kind: 'Oil',     unit: 'ladle',  guess: 2, max: 4, step: .25, snap: 4, grams: 15,  per: { cal: 120, p: 0, c: 0, f: 14 },
+           why: 'A photo can’t show oil, so this is my biggest guess. A small ladle is about 1 tablespoon.' },
+};
+const KEYS = Object.keys(ITEMS);
+const guessValues = () => Object.fromEntries(KEYS.map(k => [k, ITEMS[k].guess]));
+
+const state = {
+  cur: guessValues(),
+  open: null,        // chip with its stepper open
+  draft: '',
+  result: null,      // parsed fix waiting for a yes
+  error: '',
+  animFrom: null,    // values to animate from on the next render
+  keep: {},          // remember ticks on the updated screen
+  mem: {},           // what's remembered for next time
+  nextShown: null,
+};
+
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const nf = new Intl.NumberFormat('en-IN');
+const FRAC = { 0: '', .25: '¼', .5: '½', .75: '¾' };
+const num = v => { const w = Math.floor(v); const f = v - w; return (w || !f ? String(w) : '') + (FRAC[f] ?? ''); };
+function amount(k, v) {
+  const it = ITEMS[k];
+  if (v === 0) return k === 'roti' ? 'no rotis' : 'no ' + it.label.toLowerCase();
+  if (k === 'roti') return num(v) + (v > 1 ? ' rotis' : ' roti');
+  if (k === 'oil')  return num(v) + (v > 1 ? ' ladles' : ' ladle') + ' oil';
+  return num(v) + ' katori ' + it.label.toLowerCase();
+}
+const sum = (vals, f) => Math.round(KEYS.reduce((t, k) => t + vals[k] * ITEMS[k].per[f], 0));
+const itemCal = (k, v) => Math.round(v * ITEMS[k].per.cal);
+const changedKeys = (a, b) => KEYS.filter(k => a[k] !== b[k]);
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const say = t => { document.getElementById('live').textContent = t; };
+const mealName = v => {
+  const parts = [v.dal > 0 && 'Dal', v.sabzi > 0 && (v.dal > 0 ? 'sabzi' : 'Sabzi')].filter(Boolean);
+  const r = v.roti > 0 ? amount('roti', v.roti) : '';
+  if (!parts.length) return r ? r[0].toUpperCase() + r.slice(1) : 'An empty plate';
+  return r ? parts.join(', ') + ' and ' + r : parts.join(' and ');
+};
+
+/* ---------- The plate: a drawing that redraws itself as the numbers change ---------- */
+const ARROW = '<svg class="arrow" width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><path d="M1 6h15M11 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const FLECKS = '<circle cx="-14" cy="-10" r="3" fill="#a86a22"/><circle cx="12" cy="-16" r="2.5" fill="#a86a22"/><circle cx="16" cy="10" r="3" fill="#b5772a"/><circle cx="-8" cy="15" r="2.5" fill="#a86a22"/><circle cx="-20" cy="6" r="2" fill="#b5772a"/>';
+function rotiMarkup(i) {
+  return `<g class="roti gone" data-i="${i}"><g>
+    <g class="full"><circle r="33" fill="#dcb170" stroke="#b98b4b" stroke-width="1.5"/>${FLECKS}</g>
+    <path class="half" d="M0-33A33 33 0 0 0 0 33Z" fill="#dcb170" stroke="#b98b4b" stroke-width="1.5" style="display:none"/>
+  </g></g>`;
+}
+function plateMarkup() {
+  return `<div class="plate-wrap"><svg class="plate" viewBox="0 0 390 236" role="img" aria-label="">
+    <defs><radialGradient id="steel" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#eef1f2"/><stop offset="1" stop-color="#b9c1c6"/></radialGradient></defs>
+    <path d="M0 78H390M0 158H390M130 0V236M260 0V236" stroke="#343e55" stroke-width="2" fill="none"/>
+    <circle cx="178" cy="118" r="112" fill="#9aa3a9"/>
+    <circle cx="178" cy="118" r="108" fill="url(#steel)"/>
+    <circle cx="178" cy="118" r="96" fill="#d3d8db" stroke="#aeb6bb"/>
+    <g class="rotis">${Array.from({ length: 8 }, (_, i) => rotiMarkup(i)).join('')}</g>
+    <g transform="translate(226 74)"><circle r="39" fill="#8f989e"/><circle r="35" fill="#6e767c"/>
+      <g class="food" data-food="dal"><circle r="33" fill="#e3a81c"/><circle cx="-10" cy="-8" r="3" fill="#8c5a10"/><circle cx="9" cy="-13" r="2.5" fill="#8c5a10"/><circle cx="12" cy="9" r="3" fill="#3f6b2c"/><circle cx="-6" cy="13" r="2.5" fill="#8c5a10"/></g></g>
+    <g transform="translate(226 162)"><circle r="39" fill="#8f989e"/><circle r="35" fill="#6e767c"/>
+      <g class="food" data-food="sabzi"><circle r="33" fill="#d58f2b"/><circle cx="-11" cy="-10" r="8" fill="#f1e2bb"/><circle cx="11" cy="-7" r="7" fill="#f1e2bb"/><circle cx="-3" cy="11" r="9" fill="#e9c27c"/><circle cx="15" cy="13" r="4" fill="#3f6b2c"/><circle cx="-18" cy="9" r="3" fill="#3f6b2c"/></g></g>
+    <g transform="translate(338 0)"><path d="M26 16 7 118" stroke="#aeb6bb" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="2" cy="142" r="30" fill="#aeb6bb"/><circle cx="2" cy="142" r="25" fill="#6e767c"/>
+      <g transform="translate(2 142)"><g class="food" data-food="oil"><circle r="23" fill="#f0c53f"/><ellipse cx="-7" cy="-8" rx="6" ry="3" fill="#fbe9a6"/></g></g></g>
+  </svg><span class="plate-tag">Demo drawing, not a real photo</span></div>`;
+}
+function drawPlate(root, v) {
+  const svg = root.querySelector('.plate');
+  if (!svg) return;
+  const whole = Math.floor(v.roti), hasHalf = v.roti - whole > 0, n = Math.min(8, whole + (hasHalf ? 1 : 0));
+  svg.querySelectorAll('.roti').forEach((g, i) => {
+    const y = 118 + (i - (n - 1) / 2) * 15, x = 122 + (i % 2 ? 5 : -5);
+    g.style.transform = `translate(${x}px, ${y}px)`;
+    g.classList.toggle('gone', i >= n);
+    const isHalf = hasHalf && i === n - 1;
+    g.querySelector('.full').style.display = isHalf ? 'none' : '';
+    g.querySelector('.half').style.display = isHalf ? '' : 'none';
+  });
+  // Food fills its katori or ladle: empty at 0, full at the usual amount
+  const fill = k => { const p = v[k] / (k === 'oil' ? 2 : 1); return p ? Math.min(1, .35 + .65 * p) : 0; };
+  svg.querySelectorAll('.food').forEach(f => { f.style.transform = `scale(${fill(f.dataset.food)})`; });
+  svg.setAttribute('aria-label', 'Demo drawing of a steel plate with ' + KEYS.map(k => amount(k, v[k])).join(', '));
+}
+
+/* ---------- Numbers that move ---------- */
+const tweens = new Set();
+function tween(el, from, to, ms = 900) {
+  if (!el) return;
+  if (reduced() || from === to) { el.textContent = nf.format(to); return; }
+  const t0 = performance.now();
+  const job = { dead: false };
+  tweens.add(job);
+  el.textContent = nf.format(from);
+  (function tick(now) {
+    if (job.dead) return;
+    const p = Math.min(1, (now - t0) / ms), e = 1 - (1 - p) ** 3;
+    el.textContent = nf.format(Math.round(from + (to - from) * e));
+    if (p < 1) requestAnimationFrame(tick); else tweens.delete(job);
+  })(t0);
+}
+const stopTweens = () => { tweens.forEach(j => j.dead = true); tweens.clear(); };
+function macrosMarkup(v) {
+  return `<p class="macros"><span>Protein <b data-m="p">${sum(v, 'p')}</b><b>g</b></span><span>Carbs <b data-m="c">${sum(v, 'c')}</b><b>g</b></span><span>Fat <b data-m="f">${sum(v, 'f')}</b><b>g</b></span></p>`;
+}
+function moveNumbers(root, from, to, ms) {
+  tween(root.querySelector('[data-total]'), sum(from, 'cal'), sum(to, 'cal'), ms);
+  ['p', 'c', 'f'].forEach(f => tween(root.querySelector(`[data-m="${f}"]`), sum(from, f), sum(to, f), ms));
+}
+
+/* ---------- Reading a fix typed in plain words ---------- */
+const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+const ITEM_RE = [
+  ['oil', /\b(oil|ghee|tel|butter)\b/],
+  ['roti', /\b(rotis?|rotti|rotli|chapatis?|chapattis?|phulkas?|fulkas?)\b/],
+  ['dal', /\b(dal|daal|dhal|lentils?)\b/],
+  ['sabzi', /\b(sabzi|sabji|subzi|veg|veggies?|vegetables?|aloo gobi|gobi)\b/],
+];
+const OTHER_FOOD = /\b(rice|chawal|chicken|mutton|fish|egg|eggs|paneer|curd|dahi|salad|papad|pickle|achar|raita|sweet)\b/;
+const NUMBER = '\\d+(?:\\.\\d+)?';
+
+function normalise(text) {
+  let t = text.toLowerCase().replace(/½/g, ' 0.5').replace(/¼/g, ' 0.25').replace(/¾/g, ' 0.75');
+  for (const [w, n] of Object.entries(WORDS)) t = t.replace(new RegExp(`\\b${w}\\b`, 'g'), n);
+  return t
+    .replace(/(\d+)\s*(?:and\s*)?(?:a\s*)?half\b/g, (_, n) => String(+n + .5))
+    .replace(/(\d+)\s*0\.5\b/g, (_, n) => String(+n + .5))
+    .replace(/\b1\/2\b/g, '0.5').replace(/\b1\/4\b/g, '0.25').replace(/\b3\/4\b/g, '0.75')
+    .replace(/\b(half|aadha|adha)\b(\s+an?\b)?/g, '0.5')
+    .replace(/\bquarter\b(\s+of)?(\s+an?\b)?/g, '0.25')
+    .replace(/\ba couple of\b/g, '2')
+    .replace(/\ban?\s+(?=(?:small\s+|big\s+|full\s+)?(?:rotis?\b|chapatis?\b|phulkas?\b|katori\b|ladle\b))/g, '1 ');
+}
+function parseFix(text, cur) {
+  const clauses = normalise(text).split(/[,;\n&]|\.(?!\d)|\band\b|\bbut\b|\bwith\b|\bplus\b/).map(s => s.trim()).filter(Boolean);
+  const originals = text.split(/[,;\n&]|\.(?!\d)|\band\b|\bbut\b|\bwith\b|\bplus\b/i).map(s => s.trim()).filter(Boolean);
+  const found = {}, unknowns = [];
+  let last = null;
+  clauses.forEach((c, idx) => {
+    const original = originals[idx] || c;
+    let key = (ITEM_RE.find(([, re]) => re.test(c)) || [])[0] || null;
+    const hasLadle = /\bladles?\b/.test(c);
+    if (!key && hasLadle) key = 'oil';
+    const hasOther = OTHER_FOOD.test(c);
+    if (!key && hasOther) { unknowns.push(original); return; }
+    // "not 3" only names the old number, so it never counts as the new one
+    const kept = c.replace(new RegExp(`\\b(?:not|instead of|isn'?t|wasn'?t|rather than)\\s+${NUMBER}(?:\\s*[a-z]+)?`, 'g'), ' ');
+    const m = kept.match(new RegExp(`(${NUMBER})\\s*(g|gm|gms|gram|grams|ml)?\\b`));
+    const target = key || last;
+    if (key) last = key;
+
+    let to = null, approx = false;
+    if (key && new RegExp('\\b(no|without|skip|skipped|zero|none)\\b').test(kept) && !m) to = 0;
+    else if (m && target) {
+      to = +m[1];
+      if (m[2]) { to = to / ITEMS[target].grams; approx = true; }
+      else if (hasLadle && target !== 'oil') { to = to / 2; approx = true; }
+    }
+    else if (key && /\b(little|hardly|barely|thoda|bit|tiny)\b/.test(kept)) to = key === 'roti' ? 1 : .5;
+    else if (key && /\b(less|fewer|lesser)\b/.test(kept)) { to = cur[key] / 2; approx = true; }
+    else if (key && /\b(more|extra|another)\b/.test(kept)) to = cur[key] + (key === 'roti' ? 1 : .5);
+    else if (key) { unknowns.push(original); return; }
+    else if (m && !target) { unknowns.push(original); return; }
+    else return;
+
+    const snap = ITEMS[target].snap;
+    const snapped = Math.round(to * snap) / snap;
+    found[target] = { key: target, raw: to, to: to > 0 && snapped === 0 ? 1 / snap : snapped, approx: approx || snapped !== to };
+  });
+
+  const changes = [], slips = [];
+  let same = 0;
+  Object.values(found).forEach(f => {
+    if (f.raw > ITEMS[f.key].max) {
+      const first = +String(Math.floor(f.raw))[0];
+      slips.push({ key: f.key, raw: f.raw, suggest: first >= 1 && first <= ITEMS[f.key].max ? first : ITEMS[f.key].max });
+    } else if (f.to === cur[f.key]) same++;
+    else changes.push({ key: f.key, to: f.to, approx: f.approx });
+  });
+  return { changes, slips, unknowns, same };
+}
+function pendingValues(r) {
+  const v = { ...state.cur };
+  r.changes.forEach(c => { v[c.key] = c.to; });
+  return v;
+}
+
+/* ---------- Screens ---------- */
+const stepLine = n => `<p class="step">Step ${n} of 4</p>`;
+const chipTag = k => state.cur[k] === ITEMS[k].guess ? 'Guess' : 'Yours';
+
+function chipsMarkup() {
+  const out = [];
+  KEYS.forEach((k, i) => {
+    const you = state.cur[k] !== ITEMS[k].guess;
+    out.push(`<button type="button" class="chip${you ? ' you' : ''}" data-act="chip" data-k="${k}" aria-expanded="${state.open === k}" aria-controls="panel">
+      <small><span>${ITEMS[k].kind}</span><span>${chipTag(k)}</span></small><strong>${amount(k, state.cur[k])}</strong></button>`);
+    // The stepper opens right under the row that holds its chip
+    if (i % 2 === 1 && state.open && KEYS.indexOf(state.open) <= i && KEYS.indexOf(state.open) >= i - 1) out.push(panelMarkup(state.open));
+  });
+  return out.join('');
+}
+function panelMarkup(k) {
+  const v = state.cur[k], it = ITEMS[k];
+  return `<div class="panel" id="panel"><p>${it.why}</p>
+    <div class="stepper">
+      <button type="button" class="round" data-act="step" data-k="${k}" data-d="-1" aria-label="Less ${it.label.toLowerCase()}" ${v <= 0 ? 'disabled' : ''}><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+      <output>${amount(k, v)}</output>
+      <button type="button" class="round" data-act="step" data-k="${k}" data-d="1" aria-label="More ${it.label.toLowerCase()}" ${v >= it.max ? 'disabled' : ''}><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h12M9 3v12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+    </div></div>`;
+}
+function screenResult(main, bar) {
+  document.title = 'Your meal: Fix my meal';
+  const v = state.cur;
+  main.innerHTML = plateMarkup() + `<div class="pad">
+    ${stepLine(1)}
+    <h1 tabindex="-1" id="meal-name">${mealName(v)}</h1>
+    <p class="sub">From one photo, so this is my best guess.</p>
+    <p class="total"><b data-total>${nf.format(sum(v, 'cal'))}</b><span>Cal</span></p>
+    ${macrosMarkup(v)}
+    <section aria-labelledby="g"><h2 id="g">What I guessed</h2>
+      <p class="sub">Tap one to change it, or tell me in your own words.</p>
+      <div class="chips" id="chips">${chipsMarkup()}</div>
+    </section></div>`;
+  bar.innerHTML = `<a class="btn primary" href="#/fix">Fix in plain words</a><a class="btn" href="#/updated">Looks right, save</a>`;
+  drawPlate(main, v);
+}
+function resultMarkup() {
+  const r = state.result;
+  if (!r) return '';
+  const nothing = !r.changes.length && !r.slips.length;
+  const before = sum(state.cur, 'cal'), after = sum(pendingValues(r), 'cal'), d = after - before;
+  let html = `<section><h2 id="understood" tabindex="-1">${nothing ? 'No change found' : 'Here’s what I understood'}</h2>`;
+  if (r.changes.length) {
+    html += `<ul class="rows">` + r.changes.map(c => `<li><s>${amount(c.key, state.cur[c.key])}</s>${ARROW}<span class="sr">changes to</span><b>${c.approx ? 'about ' : ''}${amount(c.key, c.to)}</b></li>`).join('') + `</ul>`;
+    html += `<p class="diff">${d === 0 ? 'Calories stay the same.' : `That’s ${nf.format(Math.abs(d))}&nbsp;Cal ${d < 0 ? 'less' : 'more'}, so ${nf.format(after)}&nbsp;Cal in all.`}</p>`;
+  }
+  r.slips.forEach((s, i) => {
+    const big = nf.format(itemCal(s.key, s.raw));
+    html += `<div class="slip"><p>${amount(s.key, s.raw)} would add ${big}&nbsp;Cal. That looks like a slip, so I haven’t used it.</p>
+      <div class="acts"><button type="button" class="btn small" data-act="use-slip" data-i="${i}">Use ${amount(s.key, s.suggest)}</button><button type="button" class="btn small" data-act="drop-slip" data-i="${i}">Leave it as ${amount(s.key, state.cur[s.key])}</button></div></div>`;
+  });
+  r.unknowns.forEach(u => {
+    html += `<p class="unknown">I couldn’t use “${esc(u)}”. This demo plate only has roti, dal, sabzi and oil, and I need to know how much.</p>`;
+  });
+  if (nothing && !r.unknowns.length) {
+    html += `<p class="unknown">${r.same ? 'That matches what’s already on the plate.' : 'Try something like “2 rotis, not 3” or “half a ladle of oil”.'}</p>`;
+  }
+  return html + `</section>`;
+}
+function fixBar(bar) {
+  const r = state.result;
+  bar.innerHTML = r && r.changes.length
+    ? `<button type="button" class="btn primary" data-act="apply">Update meal</button>`
+    : `<button type="button" class="btn primary" data-act="check">Check my fix</button>`;
+}
+function screenFix(main, bar) {
+  document.title = 'Fix in plain words: Fix my meal';
+  const now = KEYS.map(k => amount(k, state.cur[k])).join(', ');
+  main.innerHTML = `<div class="pad">
+    <a class="back" href="#/">${ARROW.replace('class="arrow"', 'class="arrow" style="transform:scaleX(-1)"')}Back to meal</a>
+    ${stepLine(2)}
+    <h1 tabindex="-1">What did I get wrong?</h1>
+    <p class="sub">Say it the way you’d tell a friend. Rotis, katoris and ladles all work.</p>
+    <p class="sub"><b>Right now:</b> ${now}.</p>
+    <section>
+      <label class="lead" for="fix">Your fix</label>
+      <textarea id="fix" name="meal-fix" autocomplete="off" placeholder="2 rotis, not 3. Half a ladle of oil…" ${state.error ? 'aria-invalid="true" aria-describedby="fix-err"' : ''}>${esc(state.draft)}</textarea>
+      ${state.error ? `<p class="err" id="fix-err">${state.error}</p>` : ''}
+      <div class="tries" role="group" aria-label="Example fixes">
+        <button type="button" class="try" data-act="try" data-t="2 rotis, not 3">2 rotis, not 3</button>
+        <button type="button" class="try" data-act="try" data-t="half a ladle of oil">half a ladle of oil</button>
+        <button type="button" class="try" data-act="try" data-t="half katori dal">half katori dal</button>
+        <button type="button" class="try" data-act="try" data-t="200 rotis">200 rotis, to see a slip</button>
+      </div>
+    </section>
+    <div id="result">${resultMarkup()}</div></div>`;
+  fixBar(bar);
+}
+function screenUpdated(main, bar) {
+  document.title = 'Updated meal: Fix my meal';
+  const v = state.cur, g = guessValues(), ch = changedKeys(v, g), anyChange = ch.length > 0;
+  const from = state.animFrom;
+  const d = sum(v, 'cal') - sum(g, 'cal');
+  ch.forEach(k => { if (!(k in state.keep)) state.keep[k] = true; });
+  const rows = KEYS.map(k => {
+    const moved = v[k] !== g[k];
+    return `<tr><th scope="row">${moved ? `<s>${amount(k, g[k])}</s>` : ''}<b>${amount(k, v[k])}</b></th>
+      <td>${moved ? `<s>${nf.format(itemCal(k, g[k]))}</s>` : ''}<b data-line="${k}">${nf.format(itemCal(k, v[k]))}</b></td></tr>`;
+  }).join('');
+  main.innerHTML = plateMarkup() + `<div class="pad">
+    ${stepLine(3)}
+    <h1 tabindex="-1">${anyChange ? 'Your meal, fixed' : 'You kept my guess'}</h1>
+    <p class="total"><b data-total>${nf.format(sum(v, 'cal'))}</b><span>Cal</span>${anyChange ? `<s>${nf.format(sum(g, 'cal'))}</s>` : ''}</p>
+    ${anyChange ? `<p class="diff">${d === 0 ? 'Same calories as my first guess.' : `${nf.format(Math.abs(d))}&nbsp;Cal ${d < 0 ? 'less' : 'more'} than my first guess.`}</p>` : `<p class="sub">Nothing to change. You can still go back and fix it.</p>`}
+    ${macrosMarkup(v)}
+    <section aria-labelledby="b"><h2 id="b">What changed</h2>
+      <table><thead><tr><th scope="col">On your plate</th><th scope="col">Cal</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><th scope="row">Total</th><td data-foot>${nf.format(sum(v, 'cal'))}</td></tr></tfoot></table>
+    </section>
+    ${anyChange ? `<section aria-labelledby="r"><h2 id="r">Remember for next time?</h2>
+      <p class="sub">I’ll start from these on plates like this one.</p>
+      ${ch.map(k => `<label class="check"><input type="checkbox" data-keep="${k}" name="remember-${k}" ${state.keep[k] ? 'checked' : ''}><span>${amount(k, v[k])}</span></label>`).join('')}
+      <button type="button" class="linkish" data-act="undo">Undo my changes</button>
+    </section>` : `<a class="linkish" href="#/fix">Fix in plain words</a>`}
+  </div>`;
+  bar.innerHTML = `<button type="button" class="btn primary" data-act="save">${anyChange ? 'Save meal' : 'Save as it is'}</button>`;
+
+  if (from) {
+    drawPlate(main, from);
+    state.animFrom = null;
+    const t = reduced() ? 0 : 500;
+    if (t) {
+      main.querySelector('[data-total]').textContent = nf.format(sum(from, 'cal'));
+      main.querySelector('[data-foot]').textContent = nf.format(sum(from, 'cal'));
+      ['p', 'c', 'f'].forEach(f => { main.querySelector(`[data-m="${f}"]`).textContent = sum(from, f); });
+      KEYS.forEach(k => { main.querySelector(`[data-line="${k}"]`).textContent = nf.format(itemCal(k, from[k])); });
+    }
+    setTimeout(() => {
+      if (!main.isConnected || route() !== 'updated') return;
+      drawPlate(main, v);
+      moveNumbers(main, from, v, 1100);
+      tween(main.querySelector('[data-foot]'), sum(from, 'cal'), sum(v, 'cal'), 1100);
+      KEYS.forEach(k => tween(main.querySelector(`[data-line="${k}"]`), itemCal(k, from[k]), itemCal(k, v[k]), 1100));
+      say(`Total is now ${sum(v, 'cal')} Cal.`);
+    }, t);
+  } else drawPlate(main, v);
+}
+const nextValues = () => ({ ...guessValues(), ...state.mem });
+function memoMarkup() {
+  return KEYS.map(k => {
+    const kept = k in state.mem;
+    return `<li><span class="what"><b>${amount(k, nextValues()[k])}</b><span class="tag ${kept ? 'you' : 'guess'}">${kept ? 'Your usual' : 'Guess'}</span></span>
+      ${kept ? `<button type="button" class="btn small" data-act="forget" data-k="${k}" aria-label="Forget ${amount(k, state.mem[k])}">Forget</button>` : ''}</li>`;
+  }).join('');
+}
+function screenNext(main, bar) {
+  document.title = 'Next time: Fix my meal';
+  const v = nextValues(), any = Object.keys(state.mem).length > 0, g = sum(guessValues(), 'cal');
+  main.innerHTML = plateMarkup() + `<div class="pad">
+    ${stepLine(4)}
+    <h1 tabindex="-1">Next week, a plate like this</h1>
+    <p class="sub" id="next-sub">${any ? 'New photo. I started from what you told me, so there’s nothing to type.' : 'I have nothing to remember yet, so I’m guessing again.'}</p>
+    <p class="total"><b data-total>${nf.format(sum(v, 'cal'))}</b><span>Cal</span></p>
+    <p class="sub" id="next-then">${any && sum(v, 'cal') !== g ? `Without your fix, I’d have said ${nf.format(g)}&nbsp;Cal.` : ''}</p>
+    ${macrosMarkup(v)}
+    <section aria-labelledby="m"><h2 id="m">How I got there</h2>
+      <ul class="rows memo" id="memo">${memoMarkup()}</ul>
+      ${any ? '' : `<a class="linkish" href="#/fix">Fix a meal first</a>`}
+    </section>
+    <p class="why">Why this idea: in store reviews, people say one photo can’t judge portion, oil or cooking, and they want to correct it without starting over.</p>
+  </div>`;
+  bar.innerHTML = `<button type="button" class="btn primary" data-act="restart">Start over</button>`;
+  drawPlate(main, v);
+}
+
+/* ---------- Routing ---------- */
+const ROUTES = { '': screenResult, fix: screenFix, updated: screenUpdated, next: screenNext };
+const route = () => { const r = location.hash.replace(/^#\/?/, ''); return r in ROUTES ? r : ''; };
+const scrolls = {};
+let current = null, pendingFocus = true;
+function render() {
+  const r = route(), main = document.getElementById('main'), bar = document.getElementById('bar');
+  stopTweens();
+  if (current !== null) scrolls[current] = main.scrollTop;
+  const isNew = current !== r;
+  ROUTES[r](main, bar);
+  main.scrollTop = isNew ? (scrolls[r] || 0) : main.scrollTop;
+  if (isNew && current !== null && pendingFocus) { const h = main.querySelector('h1'); if (h) h.focus({ preventScroll: true }); }
+  current = r;
+}
+addEventListener('hashchange', render);
+
+/* ---------- Actions ---------- */
+function refreshResultScreen(prev) {
+  const main = document.getElementById('main');
+  const name = main.querySelector('#meal-name');
+  name.textContent = mealName(state.cur);
+  document.getElementById('chips').innerHTML = chipsMarkup();
+  drawPlate(main, state.cur);
+  moveNumbers(main, prev, state.cur, 350);
+}
+function checkFix() {
+  const box = document.getElementById('fix');
+  state.draft = box.value.trim();
+  box.value = state.draft;
+  if (!state.draft) {
+    state.error = 'Type what changed first, like “2 rotis, not 3”.';
+    state.result = null;
+    render();
+    document.getElementById('fix').focus();
+    return;
+  }
+  state.error = '';
+  state.result = parseFix(state.draft, state.cur);
+  showResult();
+}
+function showResult() {
+  const box = document.getElementById('fix');
+  box.removeAttribute('aria-invalid');
+  box.removeAttribute('aria-describedby');
+  const err = document.getElementById('fix-err');
+  if (err) err.remove();
+  document.getElementById('result').innerHTML = resultMarkup();
+  fixBar(document.getElementById('bar'));
+  const h = document.getElementById('understood');
+  if (h) { h.focus({ preventScroll: true }); h.scrollIntoView({ block: 'start', behavior: reduced() ? 'auto' : 'smooth' }); }
+  say(h ? h.textContent : '');
+}
+function apply() {
+  const r = state.result;
+  if (!r || !r.changes.length) return checkFix();
+  state.animFrom = { ...state.cur };
+  state.cur = pendingValues(r);
+  state.result = null;
+  state.draft = '';
+  location.hash = '#/updated';
+}
+function goNextWithAnim() {
+  state.animFrom = guessValues();
+  location.hash = '#/updated';
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('#skip')) { e.preventDefault(); document.getElementById('main').focus(); return; }
+  const t = e.target.closest('[data-act]');
+  if (!t) {
+    // "Looks right" after using the chips still plays the change once
+    const a = e.target.closest('a[href="#/updated"]');
+    if (a && changedKeys(state.cur, guessValues()).length) { e.preventDefault(); goNextWithAnim(); }
+    return;
+  }
+  const act = t.dataset.act, k = t.dataset.k;
+  if (act === 'chip') {
+    state.open = state.open === k ? null : k;
+    document.getElementById('chips').innerHTML = chipsMarkup();
+    document.querySelector(`.chip[data-k="${k}"]`).focus();
+    if (state.open) document.getElementById('panel').scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
+  } else if (act === 'step') {
+    const prev = { ...state.cur }, it = ITEMS[k];
+    const raw = state.cur[k] + it.step * +t.dataset.d;
+    state.cur[k] = Math.max(0, Math.min(it.max, Math.round(raw * it.snap) / it.snap));
+    const dir = t.dataset.d;
+    refreshResultScreen(prev);
+    say(`${amount(k, state.cur[k])}. Total ${sum(state.cur, 'cal')} Cal.`);
+    const again = document.querySelector(`.round[data-d="${dir}"]`);
+    (again && !again.disabled ? again : document.querySelector(`.round:not(:disabled)`)).focus();
+  } else if (act === 'try') {
+    const box = document.getElementById('fix');
+    box.value = (box.value.trim() ? box.value.trim() + ', ' : '') + t.dataset.t;
+    state.draft = box.value;
+    clearResult();
+  } else if (act === 'check') checkFix();
+  else if (act === 'apply') apply();
+  else if (act === 'use-slip') {
+    const r = state.result, s = r.slips.splice(+t.dataset.i, 1)[0];
+    if (s.suggest !== state.cur[s.key]) r.changes.push({ key: s.key, to: s.suggest, approx: false });
+    showResult();
+  } else if (act === 'drop-slip') {
+    state.result.slips.splice(+t.dataset.i, 1);
+    showResult();
+  } else if (act === 'undo') {
+    state.cur = guessValues();
+    state.keep = {};
+    state.open = null;
+    location.hash = '#/';
+  } else if (act === 'save') {
+    state.mem = {};
+    changedKeys(state.cur, guessValues()).forEach(c => { if (state.keep[c]) state.mem[c] = state.cur[c]; });
+    location.hash = '#/next';
+  } else if (act === 'forget') {
+    const main = document.getElementById('main'), prev = nextValues();
+    delete state.mem[k];
+    const v = nextValues(), g = sum(guessValues(), 'cal'), any = Object.keys(state.mem).length > 0;
+    document.getElementById('memo').innerHTML = memoMarkup();
+    document.getElementById('next-then').innerHTML = any && sum(v, 'cal') !== g ? `Without your fix, I’d have said ${nf.format(g)}&nbsp;Cal.` : '';
+    if (!any) document.getElementById('next-sub').textContent = 'You cleared everything, so I’m back to guessing.';
+    drawPlate(main, v);
+    moveNumbers(main, prev, v, 500);
+    say(`Forgotten. Total ${sum(v, 'cal')} Cal.`);
+    (document.querySelector('[data-act="forget"]') || document.querySelector('[data-act="restart"]')).focus();
+  } else if (act === 'restart') {
+    state.cur = guessValues();
+    Object.assign(state, { mem: {}, keep: {}, open: null, draft: '', result: null, error: '', animFrom: null });
+    Object.keys(scrolls).forEach(s => delete scrolls[s]);
+    location.hash = '#/';
+  }
+});
+function clearResult() {
+  state.result = null;
+  document.getElementById('result').innerHTML = '';
+  fixBar(document.getElementById('bar'));
+}
+document.addEventListener('input', e => {
+  if (e.target.id === 'fix') {
+    state.draft = e.target.value;
+    if (state.error) {
+      state.error = '';
+      e.target.removeAttribute('aria-invalid');
+      e.target.removeAttribute('aria-describedby');
+      const err = document.getElementById('fix-err');
+      if (err) err.remove();
+    }
+    if (state.result) clearResult();
+  }
+});
+document.addEventListener('change', e => {
+  if (e.target.dataset && e.target.dataset.keep) state.keep[e.target.dataset.keep] = e.target.checked;
+});
+document.addEventListener('keydown', e => {
+  if (e.target.id === 'fix' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    if (state.result && state.result.changes.length) apply(); else checkFix();
+  }
+});
+render();
+</script>
+</body>
+</html>
