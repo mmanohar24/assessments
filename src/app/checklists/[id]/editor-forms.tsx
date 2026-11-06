@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import {
   addItem,
   markReceived,
   removeItem,
+  sendChecklistReminder,
   undoReceived,
   updateDetails,
   updateItem,
@@ -293,12 +294,15 @@ export function DetailsForm({
   clientEmail,
   dueDate,
   closed,
+  lastReminder,
 }: {
   checklistId: string;
   clientName: string;
   clientEmail: string | null;
   dueDate: string;
   closed: boolean;
+  /** Already formatted on the server, or null if none was ever sent. */
+  lastReminder: string | null;
 }) {
   const { state, formAction, formRef, dirty, setDirty } = useSavedForm(updateDetails);
   const errors = state.fieldErrors ?? {};
@@ -372,36 +376,51 @@ export function DetailsForm({
           <span className="success small" aria-live="polite">
             {state.ok && !dirty ? "Saved" : ""}
           </span>
-          <SendReminderButton hasEmail={Boolean(clientEmail)} />
+          <SendReminderButton checklistId={checklistId} hasEmail={Boolean(clientEmail)} />
         </div>
       )}
+      <p className="small muted">
+        {lastReminder ? `Last reminder sent ${lastReminder}.` : "No reminder sent yet."} At most one
+        every 24 hours.
+      </p>
     </form>
   );
 }
 
-/**
- * Placeholder until email is wired up in build step 3. It sends nothing, and says so
- * plainly so nobody thinks a client was reminded.
- */
-function SendReminderButton({ hasEmail }: { hasEmail: boolean }) {
-  const [message, setMessage] = useState("");
+/** Sends one real reminder email. The server checks every rule again. */
+function SendReminderButton({ checklistId, hasEmail }: { checklistId: string; hasEmail: boolean }) {
+  const [pending, startTransition] = useTransition();
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  function send() {
+    if (pending) return;
+    if (!hasEmail) {
+      setResult({ ok: false, text: "Reminders need a client email. Add one above and save it first." });
+      return;
+    }
+    setResult(null);
+    startTransition(async () => {
+      const outcome = await sendChecklistReminder(checklistId);
+      let text = outcome.message;
+      if (outcome.nextAt) {
+        // Shown in the accountant's own time zone, worked out in their browser.
+        const when = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+          new Date(outcome.nextAt),
+        );
+        text = `${text} The next one can go out after ${when}.`;
+      }
+      setResult({ ok: outcome.ok, text });
+    });
+  }
+
   return (
     <>
-      <button
-        type="button"
-        className="btn"
-        onClick={() =>
-          setMessage(
-            hasEmail
-              ? "Reminder emails aren't switched on yet, so nothing was sent."
-              : "Reminders need a client email. Add one above and save it first.",
-          )
-        }
-      >
+      <button type="button" className="btn" onClick={send} disabled={pending}>
+        {pending ? <span className="spinner" aria-hidden="true" /> : null}
         Send reminder
       </button>
-      <span className="small muted" aria-live="polite">
-        {message}
+      <span className={`small ${result?.ok ? "success" : result ? "error" : "muted"}`} role="status" aria-live="polite">
+        {result?.text ?? ""}
       </span>
     </>
   );

@@ -68,6 +68,29 @@ export async function POST(
       if (error) throw new Error(error.message);
       return { id: data as string, publicToken };
     },
+    // The service key skips row level security, so every read filters by owner here.
+    listChecklists: async () => {
+      const { data, error } = await admin
+        .from("checklists")
+        .select("id, client_name, due_date, is_closed, items(status)")
+        .eq("owner_id", owner.user_id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+    getChecklist: async (id) => {
+      const { data, error } = await admin
+        .from("checklists")
+        .select(
+          "id, client_name, client_email, due_date, is_closed, public_token, last_reminder_at, items(title, note, status, client_note, position)",
+        )
+        .eq("id", id)
+        .eq("owner_id", owner.user_id)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
   });
 
   // No sessions: a fresh server for each request, which suits serverless hosting.

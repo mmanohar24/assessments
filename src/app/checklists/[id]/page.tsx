@@ -5,7 +5,7 @@ import { deleteChecklist, setChecklistClosed } from "@/app/checklists/actions";
 import { AppHeader } from "@/components/app-header";
 import { ConfirmButton } from "@/components/confirm-button";
 import { SubmitButton } from "@/components/submit-button";
-import { dateFormatter } from "@/lib/dates";
+import { dateFormatter, dateTimeFormatter } from "@/lib/dates";
 import { requireUser } from "@/lib/supabase/server";
 import { LIMITS, isUuid } from "@/lib/validation";
 import { ClientLink } from "./client-link";
@@ -26,7 +26,7 @@ async function load(id: string) {
   const { data } = await supabase
     .from("checklists")
     .select(
-      "id, client_name, client_email, due_date, is_closed, public_token, items(id, title, note, status, client_note, position)",
+      "id, client_name, client_email, due_date, is_closed, public_token, last_reminder_at, items(id, title, note, status, client_note, position)",
     )
     .eq("id", id)
     .order("position", { referencedTable: "items", ascending: true })
@@ -52,6 +52,7 @@ export default async function ChecklistPage({ params }: { params: Promise<{ id: 
   const sent = items.filter((i) => i.status === "sent").length;
   const closed = checklist.is_closed;
   const formatDate = await dateFormatter();
+  const formatDateTime = await dateTimeFormatter();
 
   return (
     <>
@@ -123,6 +124,11 @@ export default async function ChecklistPage({ params }: { params: Promise<{ id: 
             clientEmail={checklist.client_email}
             dueDate={checklist.due_date}
             closed={closed}
+            lastReminder={
+              checklist.last_reminder_at
+                ? formatDateTime(checklist.last_reminder_at)
+                : null
+            }
           />
         </section>
 

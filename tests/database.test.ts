@@ -53,10 +53,13 @@ beforeAll(async () => {
   await db.exec(
     readFileSync(join(__dirname, "../supabase/migrations/20261106000000_step2_client_page.sql"), "utf8"),
   );
+  await db.exec(
+    readFileSync(join(__dirname, "../supabase/migrations/20261107000000_step3_reminders.sql"), "utf8"),
+  );
 });
 
 beforeEach(async () => {
-  await db.exec("delete from public.checklists; delete from public.rate_limits;");
+  await db.exec("delete from public.reminder_log; delete from public.checklists; delete from public.rate_limits;");
 });
 
 describe("status rules", () => {
@@ -314,5 +317,90 @@ describe("client page functions", () => {
     await as(ALICE, () =>
       expect(db.query("select public.client_set_note($1, $2, 'x')", [token, itemId])).rejects.toThrow(/permission denied/),
     );
+  });
+});
+
+describe("reminder claims", () => {
+  type Claim = { result: string; log_id?: string; previous?: string | null; next_at?: string };
+  const claim = async (checklist: string, owner = ALICE, accountCap = 5, globalCap = 30) =>
+    (
+      await db.query<{ r: Claim }>("select public.claim_reminder($1, $2, $3, $4) as r", [
+        owner,
+        checklist,
+        accountCap,
+        globalCap,
+      ])
+    ).rows[0].r;
+  const lastReminder = async (checklist: string) =>
+    (await db.query<{ t: string | null }>("select last_reminder_at as t from public.checklists where id = $1", [checklist]))
+      .rows[0].t;
+  async function withEmail(owner = ALICE) {
+    const id = await createChecklist(owner);
+    await db.query("update public.checklists set client_email = 'ravi@example.com' where id = $1", [id]);
+    return id;
+  }
+
+  it("claims once, and a second claim right away is refused with the next time", async () => {
+    const id = await withEmail();
+    const first = await claim(id);
+    expect(first.result).toBe("ok");
+    expect(first.previous).toBeNull();
+    expect(await lastReminder(id)).not.toBeNull();
+    const second = await claim(id);
+    expect(second.result).toBe("too_soon");
+    expect(new Date(second.next_at!).getTime()).toBeGreaterThan(Date.now() + 23 * 3600 * 1000);
+  });
+
+  it("allows another claim once 24 hours have passed", async () => {
+    const id = await withEmail();
+    await db.query("update public.checklists set last_reminder_at = now() - interval '25 hours' where id = $1", [id]);
+    expect((await claim(id)).result).toBe("ok");
+  });
+
+  it("releasing puts last_reminder_at back and frees the cap", async () => {
+    const id = await withEmail();
+    await db.query("update public.checklists set last_reminder_at = '2026-01-01T00:00:00Z' where id = $1", [id]);
+    const first = await claim(id, ALICE, 1);
+    expect(first.result).toBe("ok");
+    await db.query("select public.release_reminder($1, $2, $3, $4)", [ALICE, id, first.log_id, first.previous]);
+    expect(new Date((await lastReminder(id))!).toISOString()).toBe("2026-01-01T00:00:00.000Z");
+    expect((await claim(id, ALICE, 1)).result).toBe("ok");
+  });
+
+  it("refuses closed, no email, all received and other people's checklists", async () => {
+    const noEmail = await createChecklist();
+    expect((await claim(noEmail)).result).toBe("no_email");
+
+    const closed = await withEmail();
+    await db.query("update public.checklists set is_closed = true where id = $1", [closed]);
+    expect((await claim(closed)).result).toBe("closed");
+
+    const done = await withEmail();
+    await db.query("update public.items set received_at = now() where checklist_id = $1", [done]);
+    expect((await claim(done)).result).toBe("all_received");
+
+    const bobs = await withEmail(BOB);
+    expect((await claim(bobs, ALICE)).result).toBe("not_found");
+    expect(await lastReminder(bobs)).toBeNull();
+  });
+
+  it("stops at the per-account cap, then at the overall cap", async () => {
+    const a1 = await withEmail();
+    const a2 = await withEmail();
+    expect((await claim(a1, ALICE, 1)).result).toBe("ok");
+    expect((await claim(a2, ALICE, 1)).result).toBe("account_cap");
+    const b1 = await withEmail(BOB);
+    expect((await claim(b1, BOB, 5, 1)).result).toBe("global_cap");
+    expect(await lastReminder(a2)).toBeNull();
+    expect(await lastReminder(b1)).toBeNull();
+  });
+
+  it("can't be called by logged-in users, who also can't set last_reminder_at", async () => {
+    const id = await withEmail();
+    await as(ALICE, async () => {
+      await expect(db.query("select public.claim_reminder($1, $2, 5, 30)", [ALICE, id])).rejects.toThrow(/permission denied/);
+      await expect(db.exec("update public.checklists set last_reminder_at = null")).rejects.toThrow(/permission denied/);
+      await expect(db.exec("select * from public.reminder_log")).rejects.toThrow(/permission denied/);
+    });
   });
 });

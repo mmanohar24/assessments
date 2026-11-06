@@ -2,6 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { createGmailTransport, gmailConfigured } from "@/lib/email";
+import {
+  ACCOUNT_DAILY_CAP,
+  GLOBAL_DAILY_CAP,
+  sendReminder,
+  type ClaimResult,
+  type ReminderChecklist,
+} from "@/lib/reminders";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/supabase/server";
 import {
   LIMITS,
@@ -217,4 +226,65 @@ export async function undoReceived(formData: FormData): Promise<void> {
     .eq("checklist_id", checklistId);
   if (error) console.error("undo received failed:", error.message);
   refresh(checklistId);
+}
+
+export type ReminderState = { ok: boolean; message: string; nextAt?: string };
+
+/** Sends one reminder for one checklist, to its own client email only. */
+export async function sendChecklistReminder(checklistId: unknown): Promise<ReminderState> {
+  const { supabase, user } = await requireUser();
+  if (!isUuid(checklistId)) return { ok: false, message: NOT_FOUND };
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  if (!gmailConfigured() || !baseUrl) {
+    return { ok: false, message: "Reminder emails aren't set up on this server yet, so nothing was sent." };
+  }
+
+  const admin = createAdminClient();
+  const outcome = await sendReminder({
+    ownerId: user.id,
+    checklistId,
+    baseUrl,
+    demoOverride: process.env.DEMO_EMAIL_OVERRIDE,
+    from: `Chasely <${process.env.GMAIL_USER!.trim()}>`,
+    replyTo: user.email ?? undefined,
+    transport: createGmailTransport(),
+    // Row level security limits this to the logged-in accountant's own checklist.
+    load: async () => {
+      const { data } = await supabase
+        .from("checklists")
+        .select("client_name, client_email, due_date, public_token, items(title, status, position)")
+        .eq("id", checklistId)
+        .order("position", { referencedTable: "items", ascending: true })
+        .maybeSingle();
+      return data as ReminderChecklist | null;
+    },
+    claim: async () => {
+      const { data, error } = await admin.rpc("claim_reminder", {
+        p_owner_id: user.id,
+        p_checklist_id: checklistId,
+        p_account_cap: ACCOUNT_DAILY_CAP,
+        p_global_cap: GLOBAL_DAILY_CAP,
+      });
+      if (error) throw new Error(error.message);
+      return data as ClaimResult;
+    },
+    release: async (logId, previous) => {
+      const { error } = await admin.rpc("release_reminder", {
+        p_owner_id: user.id,
+        p_checklist_id: checklistId,
+        p_log_id: logId,
+        p_previous: previous,
+      });
+      if (error) throw new Error(error.message);
+    },
+  }).catch((error: unknown) => {
+    console.error("reminder failed:", error instanceof Error ? error.message : "unknown");
+    return { ok: false as const, error: "The reminder couldn't be sent because of a problem on our side. Nothing was sent. Try again in a minute." };
+  });
+
+  refresh(checklistId);
+  return outcome.ok
+    ? { ok: true, message: outcome.message }
+    : { ok: false, message: outcome.error, nextAt: "nextAt" in outcome ? outcome.nextAt : undefined };
 }

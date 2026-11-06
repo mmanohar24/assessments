@@ -1,7 +1,7 @@
 # Chasely
 
 Accountants ask Claude for a document checklist. Chasely saves it, gives the client a private link, and tracks progress.
-Built so far: step 1 (database, login, `create_checklist`, dashboard, editor) and step 2 (client page at `/c/<token>`).
+Built so far: step 1 (database, login, `create_checklist`, dashboard, editor) step 2 (client page at `/c/<token>`) and step 3 (reminder emails, `list_checklists`, `get_checklist`).
 
 ## Setup
 
