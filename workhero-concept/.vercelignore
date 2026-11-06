@@ -1,0 +1,8 @@
+tests/
+docs/
+screenshots/
+og.html
+README.md
+.DS_Store
+.env*
+node_modules/

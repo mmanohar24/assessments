@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:"EB Garamond";src:url(fonts/ebgaramond-400.woff2) format("woff2");font-weight:400;font-style:normal}
+@font-face{font-family:"EB Garamond";src:url(fonts/ebgaramond-400i.woff2) format("woff2");font-weight:400;font-style:italic}
+@font-face{font-family:Figtree;src:url(fonts/figtree-var.woff2) format("woff2");font-weight:300 900}
+*{box-sizing:border-box;margin:0}
+body{width:1200px;height:630px;background:#fbf8f2;color:#1a1a1a;font-family:Figtree,sans-serif;position:relative;overflow:hidden}
+.left{position:absolute;left:72px;top:60px;bottom:56px;width:760px;display:flex;flex-direction:column}
+.eyebrow{font-size:24px;color:#5e5b54}
+h1{font:400 96px/1.03 "EB Garamond",serif;letter-spacing:-.025em;margin-top:28px}
+em{font-style:italic;color:#2238dd}
+.sub{font-size:32px;color:#5e5b54;margin-top:26px;display:flex;align-items:center;gap:14px}
+.dot{width:14px;height:14px;border-radius:50%;background:#e8573a}
+.tag{margin-top:auto;font-size:21px;line-height:1.4;color:#5e5b54}
+.note{position:absolute;right:56px;bottom:136px;width:360px;background:#fff;border:1px solid #e8e3d6;border-radius:24px;padding:24px;box-shadow:0 1px 2px rgba(30,25,10,.06),0 18px 50px -16px rgba(0,0,0,.4)}
+.from{font-size:18px;font-weight:600;color:#5e5b54}
+.txt{font-size:24px;line-height:1.3;margin-top:4px}
+.btns{display:flex;gap:10px;margin-top:18px}
+.btn{padding:13px 26px;border-radius:999px;font-size:20px;font-weight:600;background:#f1ede0}
+.btn.s{background:#2238dd;color:#fff}
+.fab{position:absolute;right:56px;bottom:50px;width:72px;height:72px;border-radius:50%;background:#2238dd;color:#fff;display:grid;place-items:center;font-weight:600;font-size:28px;box-shadow:0 12px 28px -10px #2238dd}
+.fab i{position:absolute;right:1px;bottom:1px;width:20px;height:20px;border-radius:50%;background:#e8573a;border:4px solid #fbf8f2}
+</style></head><body>
+<div class="left">
+  <p class="eyebrow">Your week with WorkHero</p>
+  <h1>Your office manager handled <em>14&nbsp;things</em> this&nbsp;week.</h1>
+  <p class="sub"><span class="dot"></span>2 need you. The rest is handled.</p>
+  <p class="tag">Design concept by Manoj Venkatesun Manoharan.<br>Sample data. Not affiliated with WorkHero.</p>
+</div>
+<div class="note">
+  <p class="from">Dana, your office manager</p>
+  <p class="txt">2 things need your okay. Everything else is handled.</p>
+  <div class="btns"><span class="btn s">Review</span><span class="btn">Later</span></div>
+</div>
+<div class="fab">D<i></i></div>
+</body></html>
