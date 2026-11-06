@@ -2,3 +2,11 @@
 docs/phonely-audit.md
 docs/phonely-audit/
 .DS_Store
+
+# Healthify audit: screenshots with personal data, kept local
+Healthify/
+
+# Leftovers from concepts on other branches
+phonely-redesign/.env.local
+phonely-redesign/.vercel/
+phonely-redesign/tests/screenshots/
