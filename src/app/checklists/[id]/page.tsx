@@ -240,7 +240,7 @@ export default async function ChecklistPage({ params, searchParams }: PageProps)
                     </form>
                   ) : (
                     <ConfirmButton
-                      label="Close checklist…"
+                      label="Close checklist"
                       title="Close this checklist?"
                       body="The client will see that it's closed and can't tick anything. Reminders stop. You can reopen it later."
                       confirmLabel="Close checklist"
@@ -260,7 +260,7 @@ export default async function ChecklistPage({ params, searchParams }: PageProps)
                     </p>
                   </div>
                   <ConfirmButton
-                    label="Delete…"
+                    label="Delete"
                     title={`Delete the checklist for ${checklist.client_name}?`}
                     body="This removes the checklist and all its items, and the client's link stops working. This can't be undone."
                     confirmLabel="Delete checklist"

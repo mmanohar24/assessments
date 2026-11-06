@@ -242,7 +242,7 @@ export function DocumentRow({
             <button
               ref={editRef}
               type="button"
-              className="btn btn-quiet"
+              className="btn btn-text"
               aria-label={`Edit ${item.title}`}
               onClick={() => setEditing(true)}
             >
@@ -283,7 +283,7 @@ export function AddDocumentButton({ checklistId }: { checklistId: string }) {
         className="btn btn-primary"
         onClick={() => setAdding(true)}
       >
-        Add document…
+        Add document
       </button>
       {adding ? (
         <ItemModal
@@ -424,7 +424,7 @@ function ItemModal({
       {item ? (
         <div className="modal-remove">
           <ConfirmButton
-            label="Remove…"
+            label="Remove"
             ariaLabel={`Remove ${item.title}`}
             title={`Remove "${item.title}"?`}
             body="This takes it off the checklist, including anything the client ticked or wrote for it. This can't be undone."

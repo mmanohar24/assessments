@@ -125,8 +125,8 @@ export function GuidePanel() {
         A filled Mark received means it&rsquo;s your move. An outlined one means it&rsquo;s
         optional, for example if they emailed it.
       </p>
-      <div className="guide-foot">
-        <p>When you&rsquo;re ready, share the link in step 3.</p>
+      <p>When you&rsquo;re ready, share the link in step 3.</p>
+      <div className="guide-actions">
         <button type="button" className="btn btn-primary" onClick={dismiss}>
           Got it
         </button>

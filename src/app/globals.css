@@ -1163,37 +1163,8 @@ dialog::backdrop {
   margin: 0;
 }
 
-.guide-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-}
 
 @media (max-width: 640px) {
-  .guide {
-    gap: 6px;
-    padding: 12px 14px;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  .guide-heading {
-    font-size: 14px;
-  }
-  .guide-legend {
-    gap: 4px 8px;
-  }
-  .guide-legend .badge {
-    font-size: 12px;
-    padding: 1px 6px;
-  }
-  .guide-foot {
-    flex-wrap: nowrap;
-  }
-  .guide-foot .btn {
-    flex-shrink: 0;
-  }
   .guide-toggle-label {
     position: absolute;
     width: 1px;
@@ -1208,4 +1179,75 @@ dialog::backdrop {
     min-height: 44px;
     padding: 0;
   }
+}
+
+/* Final polish: roomier rows and guide */
+
+.doc-row {
+  gap: 12px 16px;
+  padding: 20px 0;
+}
+
+.doc-main {
+  gap: 12px;
+}
+
+.doc-side {
+  gap: 12px;
+  align-self: center;
+}
+
+.doc-side .badge {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.doc-actions {
+  gap: 8px;
+}
+
+.doc-actions .btn {
+  min-height: 40px;
+  font-size: 15px;
+}
+
+/* Unmark and Edit stay quiet text links, with a full-size tap area. */
+.doc-actions .btn-text {
+  padding: 0 10px;
+}
+
+.guide {
+  gap: 16px;
+  padding: 20px;
+}
+
+.guide-legend {
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 14px 16px;
+}
+
+.guide-legend dt {
+  display: flex;
+}
+
+.guide-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .doc-side {
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: start;
+  }
+  .guide-legend {
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 14px 12px;
+  }
+}
+
+.doc-client-note {
+  margin-top: 0;
 }

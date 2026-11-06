@@ -62,7 +62,7 @@ export function McpUrlCard({ createdLabel }: { createdLabel: string | null }) {
 
       {hasToken ? (
         <button type="button" className="btn" onClick={() => dialogRef.current?.showModal()}>
-          Regenerate…
+          Regenerate
         </button>
       ) : (
         <button type="button" className="btn btn-primary" onClick={generate} disabled={pending}>

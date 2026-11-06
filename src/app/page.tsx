@@ -83,7 +83,7 @@ export default async function DashboardPage() {
                     </div>
                   </div>
                   <ConfirmButton
-                    label="Delete…"
+                    label="Delete"
                     ariaLabel={`Delete checklist for ${checklist.client_name}`}
                     title={`Delete the checklist for ${checklist.client_name}?`}
                     body="This removes the checklist and all its items, and the client's link stops working. This can't be undone."
