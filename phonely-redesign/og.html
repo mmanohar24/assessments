@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1200px;height:630px;background:#fdfcfb;font-family:Geist,sans-serif;color:#21201c;position:relative;overflow:hidden}
+.l{position:absolute;top:0;bottom:0;width:1px;background:#e0ddd9}
+.brand{position:absolute;left:72px;top:64px;display:flex;align-items:center;gap:12px;font-weight:600;font-size:28px;letter-spacing:-.02em}
+.mark{width:32px;height:32px;border-radius:50%;background:conic-gradient(from 200deg,#f8d0a8,#f0b8d8,#b8a8f8,#a8c8f8,#f8d0a8);box-shadow:inset 0 0 0 8px #fdfcfbcc}
+h1{position:absolute;left:72px;top:170px;width:600px;font-weight:400;font-size:76px;line-height:1.02;letter-spacing:-.035em}
+.tag{position:absolute;left:72px;bottom:64px;font:500 18px/1.4 'Geist Mono',monospace;color:#625d58;letter-spacing:.02em}
+.card{position:absolute;right:64px;top:95px;width:420px;height:440px;border-radius:24px;background:#fffefb;box-shadow:0 0 0 1px #27272a14,0 24px 48px -16px #0000002e;overflow:hidden}
+.orbw{height:220px;display:grid;place-items:center;border-bottom:1px solid #e0ddd9;background:radial-gradient(120% 140% at 0 0,#f8d0a840,transparent 55%),radial-gradient(120% 140% at 100% 100%,#b8a8f840,transparent 55%)}
+.orb{position:relative;width:170px;height:170px;display:grid;place-items:center}
+.ring{position:absolute;inset:18px;border-radius:50%;background:conic-gradient(#f8d0a8,#f0b8d8,#b8a8f8,#a8c8f8,#f8d0a8);filter:blur(14px);opacity:.8}
+.btn{position:relative;width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ecebe8 70%);box-shadow:0 10px 24px -8px #21201c40,0 0 0 1px #21201c14}
+.lines{padding:22px 26px;display:grid;gap:14px;font-size:17px;line-height:1.4}
+.ln{display:grid;grid-template-columns:76px 1fr;gap:10px}
+.s{font:500 13px/1.8 'Geist Mono',monospace;color:#6b3fa0}.s.c{color:#625d58}
+.chips{display:flex;gap:8px;padding:0 26px}
+.chip{padding:6px 12px;border-radius:99px;box-shadow:0 0 0 1px #e0ddd9;font-size:14px;background:#fff}.chip b{font:500 11px 'Geist Mono',monospace;color:#6b3fa0;margin-right:6px}
+</style></head><body>
+<div class="l" style="left:40px"></div><div class="l" style="right:40px"></div>
+<div class="brand"><span class="mark"></span>Phonely</div>
+<h1>Answer every call <em>perfectly</em> with AI</h1>
+<p class="tag">Home page redesign concept · Not affiliated with Phonely</p>
+<div class="card">
+  <div class="orbw"><div class="orb"><div class="ring"></div><div class="btn"></div></div></div>
+  <div class="lines">
+    <div class="ln"><span class="s">Phonely</span><span>Thanks for calling Harbor Street. How can I help you today?</span></div>
+    <div class="ln"><span class="s c">Caller</span><span>I’d like to book an appointment for later this week.</span></div>
+  </div>
+  <div class="chips"><span class="chip"><b>REASON</b>New appointment</span><span class="chip"><b>SLOT</b>Thu 10:30 am</span></div>
+</div>
+</body></html>

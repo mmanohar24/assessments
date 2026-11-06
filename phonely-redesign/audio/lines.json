@@ -1,0 +1,486 @@
+{
+  "model": "eleven_multilingual_v2",
+  "voices": {
+    "agent": "EXAVITQu4vr4xnSDxMaL",
+    "caller": "iP95p4xoKVk53GoZ742B"
+  },
+  "lines": [
+    {
+      "who": "agent",
+      "text": "Thanks for calling Harbor Street. How can I help you today?",
+      "file": "line-01.mp3",
+      "duration": 2.879,
+      "words": [
+        {
+          "w": "Thanks",
+          "start": 0,
+          "end": 0.29
+        },
+        {
+          "w": "for",
+          "start": 0.325,
+          "end": 0.418
+        },
+        {
+          "w": "calling",
+          "start": 0.464,
+          "end": 0.743
+        },
+        {
+          "w": "Harbor",
+          "start": 0.801,
+          "end": 1.045
+        },
+        {
+          "w": "Street.",
+          "start": 1.091,
+          "end": 1.463
+        },
+        {
+          "w": "How",
+          "start": 1.672,
+          "end": 1.811
+        },
+        {
+          "w": "can",
+          "start": 1.846,
+          "end": 1.939
+        },
+        {
+          "w": "I",
+          "start": 1.985,
+          "end": 2.009
+        },
+        {
+          "w": "help",
+          "start": 2.067,
+          "end": 2.194
+        },
+        {
+          "w": "you",
+          "start": 2.241,
+          "end": 2.322
+        },
+        {
+          "w": "today?",
+          "start": 2.368,
+          "end": 2.879
+        }
+      ]
+    },
+    {
+      "who": "caller",
+      "text": "Hi, I’d like to book an appointment for later this week.",
+      "file": "line-02.mp3",
+      "duration": 2.508,
+      "words": [
+        {
+          "w": "Hi,",
+          "start": 0,
+          "end": 0.36
+        },
+        {
+          "w": "I’d",
+          "start": 0.395,
+          "end": 0.522
+        },
+        {
+          "w": "like",
+          "start": 0.546,
+          "end": 0.662
+        },
+        {
+          "w": "to",
+          "start": 0.685,
+          "end": 0.731
+        },
+        {
+          "w": "book",
+          "start": 0.778,
+          "end": 0.906
+        },
+        {
+          "w": "an",
+          "start": 0.94,
+          "end": 0.987
+        },
+        {
+          "w": "appointment",
+          "start": 1.01,
+          "end": 1.382
+        },
+        {
+          "w": "for",
+          "start": 1.416,
+          "end": 1.521
+        },
+        {
+          "w": "later",
+          "start": 1.579,
+          "end": 1.765
+        },
+        {
+          "w": "this",
+          "start": 1.8,
+          "end": 1.904
+        },
+        {
+          "w": "week.",
+          "start": 1.95,
+          "end": 2.508
+        }
+      ]
+    },
+    {
+      "who": "agent",
+      "text": "Happy to help. I have Thursday at 10:30 am or Friday at 2:15 pm. Which works better?",
+      "file": "line-03.mp3",
+      "duration": 5.851,
+      "words": [
+        {
+          "w": "Happy",
+          "start": 0,
+          "end": 0.279
+        },
+        {
+          "w": "to",
+          "start": 0.313,
+          "end": 0.36
+        },
+        {
+          "w": "help.",
+          "start": 0.406,
+          "end": 0.778
+        },
+        {
+          "w": "I",
+          "start": 1.103,
+          "end": 1.173
+        },
+        {
+          "w": "have",
+          "start": 1.265,
+          "end": 1.428
+        },
+        {
+          "w": "Thursday",
+          "start": 1.463,
+          "end": 1.869
+        },
+        {
+          "w": "at",
+          "start": 1.916,
+          "end": 1.985
+        },
+        {
+          "w": "10:30",
+          "start": 2.032,
+          "end": 2.508
+        },
+        {
+          "w": "am",
+          "start": 2.589,
+          "end": 2.844
+        },
+        {
+          "w": "or",
+          "start": 2.902,
+          "end": 2.984
+        },
+        {
+          "w": "Friday",
+          "start": 3.042,
+          "end": 3.39
+        },
+        {
+          "w": "at",
+          "start": 3.437,
+          "end": 3.506
+        },
+        {
+          "w": "2:15",
+          "start": 3.553,
+          "end": 4.087
+        },
+        {
+          "w": "pm.",
+          "start": 4.156,
+          "end": 4.632
+        },
+        {
+          "w": "Which",
+          "start": 4.76,
+          "end": 4.969
+        },
+        {
+          "w": "works",
+          "start": 5.004,
+          "end": 5.236
+        },
+        {
+          "w": "better?",
+          "start": 5.283,
+          "end": 5.851
+        }
+      ]
+    },
+    {
+      "who": "caller",
+      "text": "Thursday morning works.",
+      "file": "line-04.mp3",
+      "duration": 1.3,
+      "words": [
+        {
+          "w": "Thursday",
+          "start": 0,
+          "end": 0.372
+        },
+        {
+          "w": "morning",
+          "start": 0.418,
+          "end": 0.65
+        },
+        {
+          "w": "works.",
+          "start": 0.685,
+          "end": 1.3
+        }
+      ]
+    },
+    {
+      "who": "agent",
+      "text": "Got it. Have you been with us before?",
+      "file": "line-05.mp3",
+      "duration": 2.09,
+      "words": [
+        {
+          "w": "Got",
+          "start": 0,
+          "end": 0.267
+        },
+        {
+          "w": "it.",
+          "start": 0.325,
+          "end": 0.522
+        },
+        {
+          "w": "Have",
+          "start": 0.697,
+          "end": 0.836
+        },
+        {
+          "w": "you",
+          "start": 0.871,
+          "end": 0.94
+        },
+        {
+          "w": "been",
+          "start": 0.987,
+          "end": 1.103
+        },
+        {
+          "w": "with",
+          "start": 1.138,
+          "end": 1.265
+        },
+        {
+          "w": "us",
+          "start": 1.312,
+          "end": 1.393
+        },
+        {
+          "w": "before?",
+          "start": 1.451,
+          "end": 2.09
+        }
+      ]
+    },
+    {
+      "who": "caller",
+      "text": "Yes, I came in last spring.",
+      "file": "line-06.mp3",
+      "duration": 1.44,
+      "words": [
+        {
+          "w": "Yes,",
+          "start": 0,
+          "end": 0.232
+        },
+        {
+          "w": "I",
+          "start": 0.255,
+          "end": 0.279
+        },
+        {
+          "w": "came",
+          "start": 0.325,
+          "end": 0.476
+        },
+        {
+          "w": "in",
+          "start": 0.499,
+          "end": 0.557
+        },
+        {
+          "w": "last",
+          "start": 0.592,
+          "end": 0.755
+        },
+        {
+          "w": "spring.",
+          "start": 0.789,
+          "end": 1.44
+        }
+      ]
+    },
+    {
+      "who": "agent",
+      "text": "Perfect. You’re booked for Thursday at 10:30 am. I’ll text you a confirmation now. Anything else?",
+      "file": "line-07.mp3",
+      "duration": 5.944,
+      "words": [
+        {
+          "w": "Perfect.",
+          "start": 0,
+          "end": 0.592
+        },
+        {
+          "w": "You’re",
+          "start": 0.975,
+          "end": 1.196
+        },
+        {
+          "w": "booked",
+          "start": 1.219,
+          "end": 1.428
+        },
+        {
+          "w": "for",
+          "start": 1.463,
+          "end": 1.556
+        },
+        {
+          "w": "Thursday",
+          "start": 1.602,
+          "end": 2.02
+        },
+        {
+          "w": "at",
+          "start": 2.067,
+          "end": 2.136
+        },
+        {
+          "w": "10:30",
+          "start": 2.194,
+          "end": 2.705
+        },
+        {
+          "w": "am.",
+          "start": 2.786,
+          "end": 3.204
+        },
+        {
+          "w": "I’ll",
+          "start": 3.239,
+          "end": 3.437
+        },
+        {
+          "w": "text",
+          "start": 3.471,
+          "end": 3.68
+        },
+        {
+          "w": "you",
+          "start": 3.704,
+          "end": 3.785
+        },
+        {
+          "w": "a",
+          "start": 3.831,
+          "end": 3.866
+        },
+        {
+          "w": "confirmation",
+          "start": 3.901,
+          "end": 4.412
+        },
+        {
+          "w": "now.",
+          "start": 4.47,
+          "end": 4.865
+        },
+        {
+          "w": "Anything",
+          "start": 5.016,
+          "end": 5.364
+        },
+        {
+          "w": "else?",
+          "start": 5.41,
+          "end": 5.944
+        }
+      ]
+    },
+    {
+      "who": "caller",
+      "text": "No, that’s it. Thanks!",
+      "file": "line-08.mp3",
+      "duration": 1.393,
+      "words": [
+        {
+          "w": "No,",
+          "start": 0,
+          "end": 0.267
+        },
+        {
+          "w": "that’s",
+          "start": 0.29,
+          "end": 0.488
+        },
+        {
+          "w": "it.",
+          "start": 0.534,
+          "end": 0.662
+        },
+        {
+          "w": "Thanks!",
+          "start": 0.697,
+          "end": 1.393
+        }
+      ]
+    },
+    {
+      "who": "agent",
+      "text": "You’re welcome. See you Thursday.",
+      "file": "line-09.mp3",
+      "duration": 2.229,
+      "words": [
+        {
+          "w": "You’re",
+          "start": 0,
+          "end": 0.267
+        },
+        {
+          "w": "welcome.",
+          "start": 0.302,
+          "end": 0.824
+        },
+        {
+          "w": "See",
+          "start": 1.207,
+          "end": 1.37
+        },
+        {
+          "w": "you",
+          "start": 1.405,
+          "end": 1.474
+        },
+        {
+          "w": "Thursday.",
+          "start": 1.521,
+          "end": 2.229
+        }
+      ]
+    }
+  ]
+}
