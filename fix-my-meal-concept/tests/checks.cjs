@@ -136,11 +136,24 @@ async function flow(browser, width, height) {
   await page.screenshot({ path: path.join(SHOTS, `${width}-3-updated-bottom.png`) });
   if (width === 390) await axe(page, 'updated');
 
+  // Remember choice is on screen without scrolling
+  const seen = sel => page.evaluate(sel => {
+    const bar = document.getElementById('bar').getBoundingClientRect().top;
+    return [...document.querySelectorAll(sel)].map(el => el.getBoundingClientRect()).map(r => r.bottom <= bar + .5 && r.top >= 0);
+  }, sel);
+  await page.evaluate(() => { document.getElementById('main').scrollTop = 0; });
+  await page.waitForTimeout(100);
+  check(`${width} remember heading and choices visible without scroll`, (await seen('#r, .check')).every(Boolean), JSON.stringify(await seen('#r, .check')));
+  await page.screenshot({ path: path.join(SHOTS, `${width}-3-updated-top.png`) });
+  const checkH = await page.$eval('.check', el => el.getBoundingClientRect().height);
+  check(`${width} remember rows at least 44px`, checkH >= 44, String(checkH));
+
   // Remembered
   await page.click('[data-act="save"]');
   await page.waitForTimeout(200);
   check(`${width} next time starts at 480`, await total(page) === '480');
   check(`${width} shows your usual twice`, (await page.$$('.tag.you')).length === 2);
+  check(`${width} first rows of How I got there visible without scroll`, (await seen('#m, #memo li:nth-child(-n+2)')).every(Boolean), JSON.stringify(await seen('#m, #memo li')));
   await auditScreen(page, width, '4-next');
   await page.evaluate(() => { const m = document.getElementById('main'); m.scrollTop = m.scrollHeight; });
   await page.waitForTimeout(100);
@@ -158,18 +171,60 @@ async function flow(browser, width, height) {
   await page.waitForTimeout(200);
   check(`${width} start over resets`, await total(page) === '760');
 
-  // Deep links with nothing fixed are not dead ends
-  await page.goto(BASE + '#/next');
+  // Every way of coming back starts fresh at step 1
+  const finish = async () => {
+    await page.goto(BASE); await page.reload(); await page.waitForTimeout(150);
+    await page.click('a[href="#/fix"]');
+    await page.fill('#fix', '2 rotis, half a ladle of oil');
+    await page.click('[data-act="check"]'); await page.waitForTimeout(100);
+    await page.click('[data-act="apply"]'); await page.waitForTimeout(100);
+    await page.click('[data-act="save"]'); await page.waitForTimeout(150);
+    return total(page);
+  };
+  const fresh = async label => {
+    await page.waitForTimeout(250);
+    const h = await page.textContent('h1');
+    check(`${width} ${label}: step 1 at 760`, await total(page) === '760' && /3 rotis/.test(h) && !!(await page.$('a[href="#/fix"].btn')), `${page.url()} ${await total(page)} ${h}`);
+  };
+  check(`${width} remember works inside a run`, await finish() === '480');
+  await page.reload(); await fresh('reload on step 4');
+  await finish(); await page.goto(BASE); await fresh('open link in same tab');
+  await finish(); await page.goto(BASE + '#/'); await fresh('open #/ link in same tab');
+  await finish(); await page.goto('about:blank'); await page.goBack(); await fresh('leave and press Back');
+  await finish(); await page.goBack(); await page.waitForTimeout(80); await page.goBack(); await page.waitForTimeout(80); await page.goBack(); await fresh('browser Back to step 1');
+  await finish();
+  const tab = await ctx.newPage(); await tab.goto(BASE); await tab.waitForTimeout(200);
+  check(`${width} new tab at 760`, await tab.textContent('[data-total]') === '760');
+  await tab.close();
+
+  // Finishing with nothing fixed is not a dead end
+  await page.goto(BASE); await page.reload(); await page.waitForTimeout(150);
+  await page.click('a[href="#/updated"]');
+  await page.waitForTimeout(200);
+  check(`${width} empty updated offers a way on`, await page.isVisible('a[href="#/fix"]'));
+  await page.click('[data-act="save"]');
   await page.waitForTimeout(200);
   check(`${width} empty next time offers a way on`, await page.isVisible('a[href="#/fix"]'));
   await page.screenshot({ path: path.join(SHOTS, `${width}-4b-next-empty.png`) });
-  await page.goto(BASE + '#/updated');
-  await page.waitForTimeout(200);
-  check(`${width} empty updated offers a way on`, await page.isVisible('a[href="#/fix"]'));
+
+  // The example chip is reworded and still trips the guard
+  await page.goto(BASE); await page.reload(); await page.waitForTimeout(150);
+  await page.click('a[href="#/fix"]');
+  check(`${width} chip says Try a mistake`, (await page.textContent('.tries')).includes('Try a mistake') && !(await page.textContent('.tries')).includes('to see a slip'));
+  await page.click('.try:has-text("Try a mistake")');
+  check(`${width} chip fills 200 rotis`, await page.inputValue('#fix') === '200 rotis');
+  await page.click('[data-act="check"]'); await page.waitForTimeout(300);
+  check(`${width} chip trips the guard, no update offered`, /looks like a slip/.test(await page.textContent('#result')) && !(await page.$('[data-act="apply"]')));
+
+  // Phrases I don't understand change nothing
+  for (const bad of ['purple banana', 'the food was nice', '5 bananas', 'dal', 'no idea about oil']) {
+    await page.fill('#fix', bad); await page.click('[data-act="check"]'); await page.waitForTimeout(100);
+    const res = await page.textContent('#result');
+    check(`${width} "${bad}" changes nothing`, /didn.t catch that/.test(res) && /Try: 2 rotis, or half a ladle of oil/.test(res) && !(await page.$('[data-act="apply"]')), res.trim().slice(0, 90));
+  }
+  await page.screenshot({ path: path.join(SHOTS, `${width}-2d-not-caught.png`) });
 
   // Long input does not break the layout
-  await page.goto(BASE + '#/fix');
-  await page.waitForTimeout(200);
   await page.fill('#fix', 'pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp rice ' + 'and some more words about a very long meal '.repeat(4));
   await page.click('[data-act="check"]');
   await page.waitForTimeout(400);
@@ -195,7 +250,21 @@ async function parser(browser) {
     ['1 and a half katori sabzi', { sabzi: 1.5 }],
     ['1½ katori dal and 4 rotis', { dal: 1.5, roti: 4 }],
     ['a ladle of dal', { dal: .5 }],
-    ['one more roti', { roti: 1 }],
+    ['one more roti', { roti: 4 }],
+    ['2 more rotis', { roti: 5 }],
+    ['one roti less', { roti: 2 }],
+    ['no oil', { oil: 0 }],
+    ['double the dal', { dal: 2 }],
+    ['half katori sabzi', { sabzi: .5 }],
+    ['3 rotis instead', {}],
+    ['4 rotis instead', { roti: 4 }],
+    ['purple banana', {}],
+    ['2 rotis, purple banana', { roti: 2 }],
+    ['2 rotis, 5 bananas', { roti: 2 }],
+    ['no idea about oil', {}],
+    ['half the dal', { dal: .5 }],
+    ["didn't have dal", { dal: 0 }],
+    ['a little more oil', { oil: 2.5 }],
     ['extra roti', { roti: 4 }],
     ['less oil', { oil: 1 }],
     ['skip the dal', { dal: 0 }],

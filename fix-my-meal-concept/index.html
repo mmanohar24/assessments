@@ -145,6 +145,26 @@ tfoot th, tfoot td { font-weight: 700; border-bottom: 0; }
 .memo .what { min-width: 0; flex: 1 1 140px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
 .why { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 16px; }
 
+/* Steps 3 and 4: a shorter picture, so the choices sit above the button */
+.compact .plate { max-height: 18dvh; }
+.compact .memo li { min-height: 52px; padding: 4px 0; }
+.was { color: var(--muted); }
+@media (max-height: 640px) {
+  .compact .plate { max-height: 12dvh; }
+  .compact .pad { padding-top: 8px; padding-bottom: 8px; }
+  .compact h1 { font-size: 24px; }
+  .compact .total { margin-top: 2px; }
+  .compact .total b { font-size: 44px; }
+  .compact .total span, .compact .total s { font-size: 18px; }
+  .compact .diff { margin-top: 2px; }
+  .compact section { margin-top: 10px; }
+  .compact .hint { display: none; }
+  .compact .check { min-height: 44px; padding: 0; }
+  .compact .step, .compact .sub, .compact .macros { font-size: 15px; line-height: 1.25; }
+  .compact .sub { margin-top: 2px; }
+  .plate-tag { left: 6px; bottom: 4px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
@@ -185,8 +205,12 @@ const state = {
   animFrom: null,    // values to animate from on the next render
   keep: {},          // remember ticks on the updated screen
   mem: {},           // what's remembered for next time
-  nextShown: null,
+  saved: false,      // this run has reached step 4
 };
+function freshRun() {
+  Object.assign(state, { cur: guessValues(), open: null, draft: '', result: null, error: '', animFrom: null, keep: {}, mem: {}, saved: false });
+  Object.keys(scrolls).forEach(s => delete scrolls[s]);
+}
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const nf = new Intl.NumberFormat('en-IN');
@@ -220,7 +244,7 @@ function rotiMarkup(i) {
     <path class="half" d="M0-33A33 33 0 0 0 0 33Z" fill="#dcb170" stroke="#b98b4b" stroke-width="1.5" style="display:none"/>
   </g></g>`;
 }
-function plateMarkup() {
+function plateMarkup(tag = 'Demo drawing, not a real photo') {
   return `<div class="plate-wrap"><svg class="plate" viewBox="0 0 390 236" role="img" aria-label="">
     <defs><radialGradient id="steel" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#eef1f2"/><stop offset="1" stop-color="#b9c1c6"/></radialGradient></defs>
     <path d="M0 78H390M0 158H390M130 0V236M260 0V236" stroke="#343e55" stroke-width="2" fill="none"/>
@@ -235,7 +259,7 @@ function plateMarkup() {
     <g transform="translate(338 0)"><path d="M26 16 7 118" stroke="#aeb6bb" stroke-width="7" stroke-linecap="round"/>
       <circle cx="2" cy="142" r="30" fill="#aeb6bb"/><circle cx="2" cy="142" r="25" fill="#6e767c"/>
       <g transform="translate(2 142)"><g class="food" data-food="oil"><circle r="23" fill="#f0c53f"/><ellipse cx="-7" cy="-8" rx="6" ry="3" fill="#fbe9a6"/></g></g></g>
-  </svg><span class="plate-tag">Demo drawing, not a real photo</span></div>`;
+  </svg><span class="plate-tag">${tag}</span></div>`;
 }
 function drawPlate(root, v) {
   const svg = root.querySelector('.plate');
@@ -291,11 +315,17 @@ const ITEM_RE = [
 const OTHER_FOOD = /\b(rice|chawal|chicken|mutton|fish|egg|eggs|paneer|curd|dahi|salad|papad|pickle|achar|raita|sweet)\b/;
 const NUMBER = '\\d+(?:\\.\\d+)?';
 
+// Words that add nothing. Anything else in a clause with no food in it means I didn't understand it.
+const FILLER = /\b(i|i'd|had|have|ate|eat|took|take|only|just|was|were|is|it|its|it's|that|that's|the|a|an|of|some|about|around|maybe|roughly|approx|like|so|actually|instead|not|sorry|ok|okay|yes|please|there|my|me|for|g|gm|gms|gram|grams|ml)\b/g;
+const leftover = c => c.replace(/\d+(?:\.\d+)?/g, ' ').replace(FILLER, ' ').replace(/[^a-z]/g, '');
+
 function normalise(text) {
   let t = text.toLowerCase().replace(/½/g, ' 0.5').replace(/¼/g, ' 0.25').replace(/¾/g, ' 0.75');
   for (const [w, n] of Object.entries(WORDS)) t = t.replace(new RegExp(`\\b${w}\\b`, 'g'), n);
   return t
-    .replace(/(\d+)\s*(?:and\s*)?(?:a\s*)?half\b/g, (_, n) => String(+n + .5))
+    .replace(/\bhalf\s+(?:of\s+)?(?:the|my)\b/g, 'halve')
+    .replace(/(\d+)\s*\+half\b/g, (_, n) => String(+n + .5))
+    .replace(/(\d+)\s*half\b/g, (_, n) => String(+n + .5))
     .replace(/(\d+)\s*0\.5\b/g, (_, n) => String(+n + .5))
     .replace(/\b1\/2\b/g, '0.5').replace(/\b1\/4\b/g, '0.25').replace(/\b3\/4\b/g, '0.75')
     .replace(/\b(half|aadha|adha)\b(\s+an?\b)?/g, '0.5')
@@ -304,36 +334,47 @@ function normalise(text) {
     .replace(/\ban?\s+(?=(?:small\s+|big\s+|full\s+)?(?:rotis?\b|chapatis?\b|phulkas?\b|katori\b|ladle\b))/g, '1 ');
 }
 function parseFix(text, cur) {
-  const clauses = normalise(text).split(/[,;\n&]|\.(?!\d)|\band\b|\bbut\b|\bwith\b|\bplus\b/).map(s => s.trim()).filter(Boolean);
-  const originals = text.split(/[,;\n&]|\.(?!\d)|\band\b|\bbut\b|\bwith\b|\bplus\b/i).map(s => s.trim()).filter(Boolean);
+  const raw = text.replace(/\band\s+(?:a\s+)?half\b/gi, '+half');
+  const originals = raw.split(/[,;\n&]|\.(?!\d)|\band\b|\bbut\b|\bwith\b|\bplus\b/i).map(s => s.trim()).filter(Boolean);
   const found = {}, unknowns = [];
   let last = null;
-  clauses.forEach((c, idx) => {
-    const original = originals[idx] || c;
-    let key = (ITEM_RE.find(([, re]) => re.test(c)) || [])[0] || null;
+  originals.forEach(original => {
+    const c = normalise(original);
+    const hit = ITEM_RE.find(([, re]) => re.test(c));
+    let key = hit ? hit[0] : null;
     const hasLadle = /\bladles?\b/.test(c);
     if (!key && hasLadle) key = 'oil';
-    const hasOther = OTHER_FOOD.test(c);
-    if (!key && hasOther) { unknowns.push(original); return; }
+    if (!key && OTHER_FOOD.test(c)) { unknowns.push({ text: original, food: true }); return; }
     // "not 3" only names the old number, so it never counts as the new one
     const kept = c.replace(new RegExp(`\\b(?:not|instead of|isn'?t|wasn'?t|rather than)\\s+${NUMBER}(?:\\s*[a-z]+)?`, 'g'), ' ');
     const m = kept.match(new RegExp(`(${NUMBER})\\s*(g|gm|gms|gram|grams|ml)?\\b`));
+    // No food named: only "only 2" style follow-ups can borrow the last food
+    if (!key) {
+      if (leftover(kept)) { unknowns.push({ text: original }); return; }
+      if (!m) return;
+      if (!last) { unknowns.push({ text: original }); return; }
+    }
     const target = key || last;
     if (key) last = key;
 
-    let to = null, approx = false;
-    if (key && new RegExp('\\b(no|without|skip|skipped|zero|none)\\b').test(kept) && !m) to = 0;
-    else if (m && target) {
-      to = +m[1];
-      if (m[2]) { to = to / ITEMS[target].grams; approx = true; }
-      else if (hasLadle && target !== 'oil') { to = to / 2; approx = true; }
+    const now = cur[target], word = hit ? (c.match(hit[1]) || [''])[0] : 'ladle';
+    const none = new RegExp(`\\b(?:no|without|skip|skipped|zero|none|nil)\\s+(?:of\\s+|the\\s+|any\\s+|my\\s+)*${word}\\b|\\b(?:didn'?t|did not)\\s+(?:have|eat|take|use|add)\\b`);
+    const less = /\b(less|fewer|lesser|minus)\b/.test(kept), more = /\b(more|extra|another)\b/.test(kept);
+    let to, approx = false;
+    if (key && /\b(double|twice)\b/.test(kept)) to = now * 2;
+    else if (key && /\b(triple|thrice)\b/.test(kept)) to = now * 3;
+    else if (key && /\bhalve\b/.test(kept)) to = now / 2;
+    else if (key && none.test(kept) && !m) to = 0;
+    else if (m) {
+      let n = +m[1];
+      if (m[2]) { n = n / ITEMS[target].grams; approx = true; }
+      else if (hasLadle && target !== 'oil') { n = n / 2; approx = true; }
+      to = less ? Math.max(0, now - n) : more ? now + n : n;
     }
-    else if (key && /\b(little|hardly|barely|thoda|bit|tiny)\b/.test(kept)) to = key === 'roti' ? 1 : .5;
-    else if (key && /\b(less|fewer|lesser)\b/.test(kept)) { to = cur[key] / 2; approx = true; }
-    else if (key && /\b(more|extra|another)\b/.test(kept)) to = cur[key] + (key === 'roti' ? 1 : .5);
-    else if (key) { unknowns.push(original); return; }
-    else if (m && !target) { unknowns.push(original); return; }
-    else return;
+    else if (more) to = now + (target === 'roti' ? 1 : .5);
+    else if (less) { to = now / 2; approx = true; }
+    else if (/\b(little|hardly|barely|thoda|bit|tiny)\b/.test(kept)) to = target === 'roti' ? 1 : .5;
+    else { unknowns.push({ text: original }); return; }
 
     const snap = ITEMS[target].snap;
     const snapped = Math.round(to * snap) / snap;
@@ -402,7 +443,8 @@ function resultMarkup() {
   if (!r) return '';
   const nothing = !r.changes.length && !r.slips.length;
   const before = sum(state.cur, 'cal'), after = sum(pendingValues(r), 'cal'), d = after - before;
-  let html = `<section><h2 id="understood" tabindex="-1">${nothing ? 'No change found' : 'Here’s what I understood'}</h2>`;
+  const lost = nothing && !r.same;
+  let html = `<section><h2 id="understood" tabindex="-1">${lost ? 'I didn\u2019t catch that' : nothing ? 'No change needed' : 'Here\u2019s what I understood'}</h2>`;
   if (r.changes.length) {
     html += `<ul class="rows">` + r.changes.map(c => `<li><s>${amount(c.key, state.cur[c.key])}</s>${ARROW}<span class="sr">changes to</span><b>${c.approx ? 'about ' : ''}${amount(c.key, c.to)}</b></li>`).join('') + `</ul>`;
     html += `<p class="diff">${d === 0 ? 'Calories stay the same.' : `That’s ${nf.format(Math.abs(d))}&nbsp;Cal ${d < 0 ? 'less' : 'more'}, so ${nf.format(after)}&nbsp;Cal in all.`}</p>`;
@@ -413,11 +455,11 @@ function resultMarkup() {
       <div class="acts"><button type="button" class="btn small" data-act="use-slip" data-i="${i}">Use ${amount(s.key, s.suggest)}</button><button type="button" class="btn small" data-act="drop-slip" data-i="${i}">Leave it as ${amount(s.key, state.cur[s.key])}</button></div></div>`;
   });
   r.unknowns.forEach(u => {
-    html += `<p class="unknown">I couldn’t use “${esc(u)}”. This demo plate only has roti, dal, sabzi and oil, and I need to know how much.</p>`;
+    if (u.food) html += `<p class="unknown">\u201c${esc(u.text)}\u201d isn\u2019t on this demo plate, so I left it out. It only has roti, dal, sabzi and oil.</p>`;
+    else if (!lost) html += `<p class="unknown">I didn\u2019t catch \u201c${esc(u.text)}\u201d, so I left it out.</p>`;
   });
-  if (nothing && !r.unknowns.length) {
-    html += `<p class="unknown">${r.same ? 'That matches what’s already on the plate.' : 'Try something like “2 rotis, not 3” or “half a ladle of oil”.'}</p>`;
-  }
+  if (lost) html += `<p class="unknown">Try: 2 rotis, or half a ladle of oil. Your meal hasn\u2019t changed.</p>`;
+  else if (nothing) html += `<p class="unknown">That matches what\u2019s already on the plate.</p>`;
   return html + `</section>`;
 }
 function fixBar(bar) {
@@ -443,7 +485,7 @@ function screenFix(main, bar) {
         <button type="button" class="try" data-act="try" data-t="2 rotis, not 3">2 rotis, not 3</button>
         <button type="button" class="try" data-act="try" data-t="half a ladle of oil">half a ladle of oil</button>
         <button type="button" class="try" data-act="try" data-t="half katori dal">half katori dal</button>
-        <button type="button" class="try" data-act="try" data-t="200 rotis">200 rotis, to see a slip</button>
+        <button type="button" class="try" data-act="try" data-t="200 rotis">Try a mistake</button>
       </div>
     </section>
     <div id="result">${resultMarkup()}</div></div>`;
@@ -460,22 +502,22 @@ function screenUpdated(main, bar) {
     return `<tr><th scope="row">${moved ? `<s>${amount(k, g[k])}</s>` : ''}<b>${amount(k, v[k])}</b></th>
       <td>${moved ? `<s>${nf.format(itemCal(k, g[k]))}</s>` : ''}<b data-line="${k}">${nf.format(itemCal(k, v[k]))}</b></td></tr>`;
   }).join('');
-  main.innerHTML = plateMarkup() + `<div class="pad">
+  main.innerHTML = plateMarkup('Demo drawing') + `<div class="pad">
     ${stepLine(3)}
     <h1 tabindex="-1">${anyChange ? 'Your meal, fixed' : 'You kept my guess'}</h1>
     <p class="total"><b data-total>${nf.format(sum(v, 'cal'))}</b><span>Cal</span>${anyChange ? `<s>${nf.format(sum(g, 'cal'))}</s>` : ''}</p>
     ${anyChange ? `<p class="diff">${d === 0 ? 'Same calories as my first guess.' : `${nf.format(Math.abs(d))}&nbsp;Cal ${d < 0 ? 'less' : 'more'} than my first guess.`}</p>` : `<p class="sub">Nothing to change. You can still go back and fix it.</p>`}
     ${macrosMarkup(v)}
+    ${anyChange ? `<section aria-labelledby="r"><h2 id="r">Remember for next time?</h2>
+      <p class="sub hint">I\u2019ll start from these on plates like this one.</p>
+      ${ch.map(k => `<label class="check"><input type="checkbox" data-keep="${k}" name="remember-${k}" ${state.keep[k] ? 'checked' : ''}><span><b>${amount(k, v[k])}</b> <span class="was">was ${amount(k, g[k])}</span></span></label>`).join('')}
+      <button type="button" class="linkish" data-act="undo">Undo my changes</button>
+    </section>` : `<a class="linkish" href="#/fix">Fix in plain words</a>`}
     <section aria-labelledby="b"><h2 id="b">What changed</h2>
       <table><thead><tr><th scope="col">On your plate</th><th scope="col">Cal</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr><th scope="row">Total</th><td data-foot>${nf.format(sum(v, 'cal'))}</td></tr></tfoot></table>
     </section>
-    ${anyChange ? `<section aria-labelledby="r"><h2 id="r">Remember for next time?</h2>
-      <p class="sub">I’ll start from these on plates like this one.</p>
-      ${ch.map(k => `<label class="check"><input type="checkbox" data-keep="${k}" name="remember-${k}" ${state.keep[k] ? 'checked' : ''}><span>${amount(k, v[k])}</span></label>`).join('')}
-      <button type="button" class="linkish" data-act="undo">Undo my changes</button>
-    </section>` : `<a class="linkish" href="#/fix">Fix in plain words</a>`}
   </div>`;
   bar.innerHTML = `<button type="button" class="btn primary" data-act="save">${anyChange ? 'Save meal' : 'Save as it is'}</button>`;
 
@@ -510,17 +552,17 @@ function memoMarkup() {
 function screenNext(main, bar) {
   document.title = 'Next time: Fix my meal';
   const v = nextValues(), any = Object.keys(state.mem).length > 0, g = sum(guessValues(), 'cal');
-  main.innerHTML = plateMarkup() + `<div class="pad">
+  main.innerHTML = plateMarkup('Demo drawing') + `<div class="pad">
     ${stepLine(4)}
     <h1 tabindex="-1">Next week, a plate like this</h1>
     <p class="sub" id="next-sub">${any ? 'New photo. I started from what you told me, so there’s nothing to type.' : 'I have nothing to remember yet, so I’m guessing again.'}</p>
     <p class="total"><b data-total>${nf.format(sum(v, 'cal'))}</b><span>Cal</span></p>
     <p class="sub" id="next-then">${any && sum(v, 'cal') !== g ? `Without your fix, I’d have said ${nf.format(g)}&nbsp;Cal.` : ''}</p>
-    ${macrosMarkup(v)}
     <section aria-labelledby="m"><h2 id="m">How I got there</h2>
       <ul class="rows memo" id="memo">${memoMarkup()}</ul>
       ${any ? '' : `<a class="linkish" href="#/fix">Fix a meal first</a>`}
     </section>
+    <section>${macrosMarkup(v)}</section>
     <p class="why">Why this idea: in store reviews, people say one photo can’t judge portion, oil or cooking, and they want to correct it without starting over.</p>
   </div>`;
   bar.innerHTML = `<button type="button" class="btn primary" data-act="restart">Start over</button>`;
@@ -535,8 +577,11 @@ let current = null, pendingFocus = true;
 function render() {
   const r = route(), main = document.getElementById('main'), bar = document.getElementById('bar');
   stopTweens();
+  // Coming back to step 1 after finishing starts a new run
+  if (r === '' && state.saved) freshRun();
   if (current !== null) scrolls[current] = main.scrollTop;
   const isNew = current !== r;
+  main.classList.toggle('compact', r === 'updated' || r === 'next');
   ROUTES[r](main, bar);
   main.scrollTop = isNew ? (scrolls[r] || 0) : main.scrollTop;
   if (isNew && current !== null && pendingFocus) { const h = main.querySelector('h1'); if (h) h.focus({ preventScroll: true }); }
@@ -639,6 +684,7 @@ document.addEventListener('click', e => {
   } else if (act === 'save') {
     state.mem = {};
     changedKeys(state.cur, guessValues()).forEach(c => { if (state.keep[c]) state.mem[c] = state.cur[c]; });
+    state.saved = true;
     location.hash = '#/next';
   } else if (act === 'forget') {
     const main = document.getElementById('main'), prev = nextValues();
@@ -652,9 +698,7 @@ document.addEventListener('click', e => {
     say(`Forgotten. Total ${sum(v, 'cal')} Cal.`);
     (document.querySelector('[data-act="forget"]') || document.querySelector('[data-act="restart"]')).focus();
   } else if (act === 'restart') {
-    state.cur = guessValues();
-    Object.assign(state, { mem: {}, keep: {}, open: null, draft: '', result: null, error: '', animFrom: null });
-    Object.keys(scrolls).forEach(s => delete scrolls[s]);
+    freshRun();
     location.hash = '#/';
   }
 });
@@ -685,7 +729,15 @@ document.addEventListener('keydown', e => {
     if (state.result && state.result.changes.length) apply(); else checkFix();
   }
 });
-render();
+// Every page load is a new run at step 1. Nothing carries over.
+function startAtStepOne() {
+  freshRun();
+  current = null;
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  render();
+}
+addEventListener('pageshow', e => { if (e.persisted) startAtStepOne(); });
+startAtStepOne();
 </script>
 </body>
 </html>
