@@ -8,6 +8,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { dateFormatter } from "@/lib/dates";
 import { requireUser } from "@/lib/supabase/server";
 import { LIMITS, isUuid } from "@/lib/validation";
+import { ClientLink } from "./client-link";
 import { AddItemForm, DetailsForm, ItemEditor, UnsavedChangesGuard } from "./editor-forms";
 
 type Item = {
@@ -25,7 +26,7 @@ async function load(id: string) {
   const { data } = await supabase
     .from("checklists")
     .select(
-      "id, client_name, client_email, due_date, is_closed, items(id, title, note, status, client_note, position)",
+      "id, client_name, client_email, due_date, is_closed, public_token, items(id, title, note, status, client_note, position)",
     )
     .eq("id", id)
     .order("position", { referencedTable: "items", ascending: true })
@@ -70,6 +71,10 @@ export default async function ChecklistPage({ params }: { params: Promise<{ id: 
             </p>
           </div>
         </div>
+
+        <ClientLink
+          url={`${(process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")}/c/${checklist.public_token}`}
+        />
 
         {closed ? (
           <div className="banner">

@@ -19,9 +19,11 @@ Before calling:
 - Dates are date only, as YYYY-MM-DD. If the user gives a day with no year, use the next time that date comes around.
 
 Writing the items:
+- Aim for 8 to 12 items. A short list gets finished. Only go above 12 if the user asks for more or the case really needs it. The hard limit is ${LIMITS.minItems} to ${LIMITS.maxItems}.
+- Group related documents into one item. For example, "Bank statements for all accounts, April to March" is one item, not one per bank or per month. Each item should be one thing the client sends in one go.
 - title: the document name only, short and clear, like "Form 16 from employer". Maximum ${LIMITS.title} characters.
-- note: one or two plain sentences telling the client why it's needed or where to find it. The client reads this on their phone and may not know accounting terms. Maximum ${LIMITS.note} characters.
-- Keep each item to one document, in a sensible order. ${LIMITS.minItems} to ${LIMITS.maxItems} items.
+- note: short. One sentence, two at most, telling the client why it's needed or where to find it. The client reads this on their phone and may not know accounting terms. Maximum ${LIMITS.note} characters.
+- Put the items in a sensible order, most important first.
 - Never ask the client to type account numbers or ID numbers into the checklist.
 
 This tool only creates. You can't set an item's status: only the client can mark an item sent, and only the accountant can mark it received.
@@ -51,7 +53,7 @@ After it works, tell the user exactly what was created (client, due date, number
         type: "array",
         minItems: LIMITS.minItems,
         maxItems: LIMITS.maxItems,
-        description: "The documents to collect, in the order the client should see them.",
+        description: "The documents to collect, in the order the client should see them. Aim for 8 to 12, grouping related documents into one item.",
         items: {
           type: "object",
           properties: {
@@ -63,7 +65,7 @@ After it works, tell the user exactly what was created (client, due date, number
             note: {
               type: "string",
               maxLength: LIMITS.note,
-              description: "Why it's needed or where to find it, in plain words for the client.",
+              description: "One short sentence, two at most: why it's needed or where to find it, in plain words for the client.",
             },
           },
           required: ["title", "note"],

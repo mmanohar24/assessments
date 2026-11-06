@@ -6,6 +6,7 @@ export const LIMITS = {
   email: 254,
   title: 80,
   note: 300,
+  clientNote: 500,
   minItems: 1,
   maxItems: 40,
   maxYearsAhead: 5,
@@ -220,4 +221,24 @@ const UUID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 
 export function isUuid(value: unknown): value is string {
   return typeof value === "string" && UUID_FORMAT.test(value);
+}
+
+// Client links use newToken(): 32 random bytes, which is 43 base64url characters.
+const PUBLIC_TOKEN_FORMAT = /^[A-Za-z0-9_-]{32,128}$/;
+
+export function isPublicToken(value: unknown): value is string {
+  return typeof value === "string" && PUBLIC_TOKEN_FORMAT.test(value);
+}
+
+/** Checks a note the client writes on the client page. Blank is fine and clears it. */
+export function clientNoteError(value: unknown): string | null {
+  if (typeof value !== "string") return "Your note must be text.";
+  const clean = value.trim();
+  if (clean.length > LIMITS.clientNote) {
+    return `Your note is ${clean.length} characters. The limit is ${LIMITS.clientNote}.`;
+  }
+  if (CONTROL_CHARS_EXCEPT_NEWLINE.test(clean)) {
+    return "Your note has hidden characters. Type it again as plain text.";
+  }
+  return null;
 }

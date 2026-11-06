@@ -1,6 +1,7 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { buildMcpServer } from "@/lib/mcp/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { clientIp, withinLimit } from "@/lib/rate-limit";
 import { hashToken, newToken } from "@/lib/tokens";
 
 const MAX_BODY_BYTES = 256 * 1024;
@@ -16,24 +17,6 @@ function rpcError(status: number, message: string) {
   );
 }
 
-async function withinLimit(
-  admin: ReturnType<typeof createAdminClient>,
-  key: string,
-  max: number,
-): Promise<boolean> {
-  const { data, error } = await admin.rpc("hit_rate_limit", {
-    p_key: hashToken(key),
-    p_max: max,
-    p_window_seconds: 60,
-  });
-  // If the counter itself fails, let the request through instead of blocking everyone.
-  if (error) {
-    console.error("rate limit check failed:", error.message);
-    return true;
-  }
-  return data === true;
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ token: string }> },
@@ -42,7 +25,7 @@ export async function POST(
 
   const admin = createAdminClient();
 
-  const ip = request.headers.get("x-real-ip") ?? "unknown";
+  const ip = clientIp(request.headers);
   if (!(await withinLimit(admin, `mcp:ip:${ip}`, IP_LIMIT_PER_MINUTE))) {
     return rpcError(429, "Too many requests. Wait a minute and try again.");
   }

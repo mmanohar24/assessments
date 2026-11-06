@@ -50,6 +50,9 @@ beforeAll(async () => {
   await db.exec(
     readFileSync(join(__dirname, "../supabase/migrations/20261105000000_step1_schema.sql"), "utf8"),
   );
+  await db.exec(
+    readFileSync(join(__dirname, "../supabase/migrations/20261106000000_step2_client_page.sql"), "utf8"),
+  );
 });
 
 beforeEach(async () => {
@@ -228,5 +231,88 @@ describe("create function and rate limit", () => {
     expect(await hit()).toBe(true);
     expect(await hit()).toBe(true);
     expect(await hit()).toBe(false);
+  });
+});
+
+describe("client page functions", () => {
+  async function setup() {
+    const token = "c".repeat(43);
+    const { rows } = await db.query<{ id: string }>(
+      `select public.create_checklist_with_items($1, 'Ravi', null, '2099-01-01', $2,
+         '[{"title":"Form 16"},{"title":"Rent receipts"}]'::jsonb) as id`,
+      [ALICE, token],
+    );
+    const items = await db.query<{ id: string }>(
+      "select id from public.items where checklist_id = $1 order by position",
+      [rows[0].id],
+    );
+    return { token, checklistId: rows[0].id, itemId: items.rows[0].id, otherItemId: items.rows[1].id };
+  }
+  const sent = async (token: string, item: string, value: boolean) =>
+    (await db.query<{ r: string }>("select public.client_set_sent($1, $2, $3) as r", [token, item, value])).rows[0].r;
+  const note = async (token: string, item: string, value: string) =>
+    (await db.query<{ r: string }>("select public.client_set_note($1, $2, $3) as r", [token, item, value])).rows[0].r;
+  const row = async (item: string) =>
+    (
+      await db.query<{ status: string; client_note: string | null; received_at: string | null }>(
+        "select status, client_note, received_at from public.items where id = $1",
+        [item],
+      )
+    ).rows[0];
+
+  it("ticks and unticks an item", async () => {
+    const { token, itemId } = await setup();
+    expect(await sent(token, itemId, true)).toBe("sent");
+    expect((await row(itemId)).status).toBe("sent");
+    expect(await sent(token, itemId, false)).toBe("pending");
+    expect((await row(itemId)).status).toBe("pending");
+  });
+
+  it("can never set received, and leaves received items alone", async () => {
+    const { token, itemId } = await setup();
+    await sent(token, itemId, true);
+    expect((await row(itemId)).received_at).toBeNull();
+    await db.query("update public.items set received_at = now() where id = $1", [itemId]);
+    expect(await sent(token, itemId, false)).toBe("received");
+    expect(await note(token, itemId, "late note")).toBe("received");
+    expect(await row(itemId)).toMatchObject({ status: "received", client_note: null });
+  });
+
+  it("saves, trims and clears a note, and refuses one over 500 characters", async () => {
+    const { token, itemId } = await setup();
+    expect(await note(token, itemId, "  Sent by email  ")).toBe("pending");
+    expect((await row(itemId)).client_note).toBe("Sent by email");
+    await note(token, itemId, "   ");
+    expect((await row(itemId)).client_note).toBeNull();
+    await expect(note(token, itemId, "x".repeat(501))).rejects.toThrow();
+  });
+
+  it("changes nothing on a closed checklist", async () => {
+    const { token, checklistId, itemId } = await setup();
+    await db.query("update public.checklists set is_closed = true where id = $1", [checklistId]);
+    expect(await sent(token, itemId, true)).toBe("closed");
+    expect(await note(token, itemId, "hi")).toBe("closed");
+    expect(await row(itemId)).toMatchObject({ status: "pending", client_note: null });
+  });
+
+  it("only works with the right token, on that checklist's own items", async () => {
+    const { token, itemId } = await setup();
+    expect(await sent("w".repeat(43), itemId, true)).toBe("not_found");
+    const other = await createChecklist(BOB);
+    const bobItem = (
+      await db.query<{ id: string }>("select id from public.items where checklist_id = $1 limit 1", [other])
+    ).rows[0].id;
+    expect(await sent(token, bobItem, true)).toBe("not_found");
+    expect((await row(bobItem)).status).toBe("pending");
+  });
+
+  it("can't be called by anon or logged-in users directly", async () => {
+    const { token, itemId } = await setup();
+    await as(null, () =>
+      expect(db.query("select public.client_set_sent($1, $2, true)", [token, itemId])).rejects.toThrow(/permission denied/),
+    );
+    await as(ALICE, () =>
+      expect(db.query("select public.client_set_note($1, $2, 'x')", [token, itemId])).rejects.toThrow(/permission denied/),
+    );
   });
 });

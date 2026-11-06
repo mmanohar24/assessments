@@ -601,3 +601,150 @@ dialog::backdrop {
 .dialog-actions form {
   margin: 0;
 }
+
+/* Client page: built for phones first */
+
+.client {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(64px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: grid;
+  gap: 24px;
+}
+
+.client > h1 {
+  margin-top: 8vh;
+}
+
+.client-head {
+  display: grid;
+  gap: 4px;
+}
+
+.client-intro {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+}
+
+.client-progress {
+  display: grid;
+  gap: 8px;
+}
+
+.client-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.client-item {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+}
+
+.client-item .error:empty {
+  display: none;
+}
+
+.client-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.client-check:hover {
+  border-color: var(--muted);
+}
+
+.client-check.is-checked {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.client-check input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.client-check .spinner {
+  margin-left: auto;
+  color: var(--accent);
+}
+
+.client-check:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.client-received {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.client-details summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.client-details summary:hover {
+  color: var(--accent-hover);
+}
+
+.client-details[open] summary {
+  margin-bottom: 4px;
+}
+
+.notice {
+  color: var(--text);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .client-item .btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-check {
+    transition: none;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

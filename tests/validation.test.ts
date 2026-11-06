@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { dueDateError, earliestToday, validateCreateChecklist } from "@/lib/validation";
+import {
+  clientNoteError,
+  dueDateError,
+  earliestToday,
+  isPublicToken,
+  validateCreateChecklist,
+} from "@/lib/validation";
 
 const NOW = new Date("2026-11-05T12:00:00Z");
 const good = {
@@ -115,5 +121,28 @@ describe("due dates and time zones", () => {
     expect(earliestToday(earlyUtc)).toBe("2026-11-05");
     expect(dueDateError("2026-11-05", earlyUtc)).toBeNull();
     expect(dueDateError("2026-11-04", earlyUtc)).toContain("in the past");
+  });
+});
+
+describe("client page input", () => {
+  it("accepts only long, URL-safe tokens", () => {
+    expect(isPublicToken("a".repeat(43))).toBe(true);
+    expect(isPublicToken("Ab-_9".repeat(9))).toBe(true);
+    expect(isPublicToken("short")).toBe(false);
+    expect(isPublicToken("a".repeat(42) + "/")).toBe(false);
+    expect(isPublicToken(123)).toBe(false);
+  });
+
+  it("allows a blank note or one up to 500 characters", () => {
+    expect(clientNoteError("")).toBeNull();
+    expect(clientNoteError("x".repeat(500))).toBeNull();
+    expect(clientNoteError(`  ${"x".repeat(500)}  `)).toBeNull();
+    expect(clientNoteError("line one\nline two")).toBeNull();
+  });
+
+  it("explains a note that is too long, has hidden characters or isn't text", () => {
+    expect(clientNoteError("x".repeat(501))).toBe("Your note is 501 characters. The limit is 500.");
+    expect(clientNoteError("bad\u0007")).toMatch(/hidden characters/);
+    expect(clientNoteError(null)).toMatch(/must be text/);
   });
 });
