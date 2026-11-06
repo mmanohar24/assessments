@@ -1039,3 +1039,173 @@ dialog::backdrop {
     transition: none;
   }
 }
+
+/* Polish: icons, quiet buttons, save feedback, reminder callout, guide */
+
+.icon {
+  flex-shrink: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* A quiet text-style button, set apart from the outlined and filled ones. */
+.btn-text {
+  min-height: 32px;
+  padding: 0 8px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+}
+
+.btn-text:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: transparent;
+  color: var(--text);
+  text-decoration-color: currentColor;
+}
+
+.btn[aria-disabled="true"] {
+  cursor: default;
+}
+
+.save-status {
+  min-height: 20px;
+}
+
+.saved-flash {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.reminder {
+  display: grid;
+  gap: 10px;
+}
+
+.callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 560px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.callout .icon {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.editor-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.editor-title-row h1 {
+  min-width: 0;
+}
+
+.guide-toggle {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 10px;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.guide {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.guide-heading {
+  font-size: 15px;
+}
+
+.guide-heading:focus {
+  outline: none;
+}
+
+.guide-heading:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.guide-legend {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 0;
+}
+
+.guide-legend dd {
+  margin: 0;
+}
+
+.guide-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+@media (max-width: 640px) {
+  .guide {
+    gap: 6px;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .guide-heading {
+    font-size: 14px;
+  }
+  .guide-legend {
+    gap: 4px 8px;
+  }
+  .guide-legend .badge {
+    font-size: 12px;
+    padding: 1px 6px;
+  }
+  .guide-foot {
+    flex-wrap: nowrap;
+  }
+  .guide-foot .btn {
+    flex-shrink: 0;
+  }
+  .guide-toggle-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .guide-toggle {
+    position: relative;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+}

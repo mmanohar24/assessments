@@ -9,6 +9,7 @@ import { dateFormatter, dateTimeFormatter, isOverdue } from "@/lib/dates";
 import { requireUser } from "@/lib/supabase/server";
 import { LIMITS, isUuid } from "@/lib/validation";
 import { ClientLink } from "./client-link";
+import { GuidePanel, GuideProvider, GuideToggle } from "./guide";
 import {
   AddDocumentButton,
   DetailsForm,
@@ -77,7 +78,8 @@ export default async function ChecklistPage({ params, searchParams }: PageProps)
     <>
       <AppHeader />
       <UnsavedChangesGuard />
-      <main id="main" className="page editor">
+      <GuideProvider>
+        <main id="main" className="page editor">
         <p className="small" style={{ marginBottom: 12 }}>
           <Link href="/">← All checklists</Link>
         </p>
@@ -85,7 +87,10 @@ export default async function ChecklistPage({ params, searchParams }: PageProps)
         {/* Stays on screen while scrolling and moving between steps. */}
         <div className="editor-head">
           <div className="editor-title">
-            <h1 className="break">{checklist.client_name}</h1>
+            <div className="editor-title-row">
+              <h1 className="break">{checklist.client_name}</h1>
+              {step.key === "documents" ? <GuideToggle /> : null}
+            </div>
             <p className={`small num ${overdue ? "error" : "muted"}`}>
               {overdue ? "Overdue, was due " : "Due "}
               {formatDate(checklist.due_date)}
@@ -154,6 +159,7 @@ export default async function ChecklistPage({ params, searchParams }: PageProps)
         <section className="step-panel" aria-labelledby="step-heading">
           {step.key === "documents" ? (
             <>
+              <GuidePanel />
               <div className="step-panel-head">
                 <h2 id="step-heading" tabIndex={-1}>
                   Documents
@@ -266,7 +272,8 @@ export default async function ChecklistPage({ params, searchParams }: PageProps)
             </>
           ) : null}
         </section>
-      </main>
+        </main>
+      </GuideProvider>
     </>
   );
 }
@@ -311,9 +318,7 @@ async function ShareStep({
         {closed ? (
           <p className="small muted">Reopen the checklist to send reminders.</p>
         ) : (
-          <div className="item-actions">
-            <SendReminderButton checklistId={checklistId} hasEmail={Boolean(clientEmail)} />
-          </div>
+          <SendReminderButton checklistId={checklistId} hasEmail={Boolean(clientEmail)} />
         )}
         {!clientEmail && !closed ? (
           <p className="small muted">

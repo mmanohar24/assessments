@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import {
   addItem,
   markReceived,
@@ -12,6 +13,7 @@ import {
   type FormState,
 } from "@/app/checklists/actions";
 import { ConfirmButton } from "@/components/confirm-button";
+import { BellIcon, CheckIcon, ClockIcon, InfoIcon } from "@/components/icons";
 import { SubmitButton } from "@/components/submit-button";
 import { LIMITS } from "@/lib/validation";
 
@@ -20,6 +22,55 @@ const STATUS_LABEL = {
   sent: "Client says sent",
   received: "Received",
 } as const;
+
+/** The status chip. Used on each row and in the guide's legend. */
+export function StatusChip({ status }: { status: keyof typeof STATUS_LABEL }) {
+  return (
+    <span className={`badge badge-${status}`}>
+      {status === "pending" ? <ClockIcon size={12} /> : null}
+      {STATUS_LABEL[status]}
+    </span>
+  );
+}
+
+/**
+ * Mark received and Unmark swap places after a save. For a short moment after the
+ * swap, clicks are ignored, so a quick double click can't flip it straight back.
+ * It stays focusable the whole time.
+ */
+function RowActionButton({
+  className,
+  ariaLabel,
+  cooling,
+  buttonRef,
+  children,
+}: {
+  className: string;
+  ariaLabel: string;
+  cooling: boolean;
+  buttonRef: React.RefObject<HTMLButtonElement | null>;
+  children: React.ReactNode;
+}) {
+  const { pending } = useFormStatus();
+  const blocked = pending || cooling;
+  return (
+    <button
+      ref={buttonRef}
+      type="submit"
+      className={className}
+      aria-label={ariaLabel}
+      aria-disabled={blocked || undefined}
+      onClick={(event) => {
+        if (blocked) event.preventDefault();
+      }}
+    >
+      {pending ? <span className="spinner" aria-hidden="true" /> : null}
+      {children}
+    </button>
+  );
+}
+
+const SWAP_COOLDOWN_MS = 600;
 
 /** Warns before leaving if any form on the page has changes that aren't saved. */
 export function UnsavedChangesGuard() {
@@ -106,6 +157,23 @@ export function DocumentRow({
   const [editing, setEditing] = useState(false);
   const editRef = useRef<HTMLButtonElement>(null);
   const removingRef = useRef(false);
+  const actionRef = useRef<HTMLButtonElement>(null);
+  const [cooling, setCooling] = useState(false);
+  const lastStatus = useRef(item.status);
+
+  // After Mark received or Unmark, the other button takes its place. Ignore clicks on
+  // it for a moment, and keep focus on it if the old button had focus.
+  useEffect(() => {
+    const wasReceived = lastStatus.current === "received";
+    lastStatus.current = item.status;
+    if (wasReceived === (item.status === "received")) return;
+    setCooling(true);
+    if (document.activeElement === document.body || document.activeElement === null) {
+      actionRef.current?.focus();
+    }
+    const timer = setTimeout(() => setCooling(false), SWAP_COOLDOWN_MS);
+    return () => clearTimeout(timer);
+  }, [item.status]);
 
   // When this row is removed its buttons go with it, so move focus somewhere
   // sensible instead of losing it.
@@ -140,26 +208,35 @@ export function DocumentRow({
       </div>
 
       <div className="doc-side">
-        <span className={`badge badge-${item.status}`}>{STATUS_LABEL[item.status]}</span>
+        <StatusChip status={item.status} />
         {closed ? null : (
           <div className="doc-actions">
             {item.status === "received" ? (
               <form action={undoReceived}>
                 <input type="hidden" name="checklist_id" value={checklistId} />
                 <input type="hidden" name="item_id" value={item.id} />
-                <SubmitButton ariaLabel={`Undo received for ${item.title}`}>Undo</SubmitButton>
+                <RowActionButton
+                  className="btn btn-text"
+                  ariaLabel={`Unmark ${item.title} as received`}
+                  cooling={cooling}
+                  buttonRef={actionRef}
+                >
+                  Unmark
+                </RowActionButton>
               </form>
             ) : (
               <form action={markReceived}>
                 <input type="hidden" name="checklist_id" value={checklistId} />
                 <input type="hidden" name="item_id" value={item.id} />
                 {/* The filled button is for items the client says they sent. */}
-                <SubmitButton
+                <RowActionButton
                   className={item.status === "sent" ? "btn btn-primary" : "btn"}
                   ariaLabel={`Mark ${item.title} as received`}
+                  cooling={cooling}
+                  buttonRef={actionRef}
                 >
                   Mark received
-                </SubmitButton>
+                </RowActionButton>
               </form>
             )}
             <button
@@ -380,6 +457,16 @@ export function DetailsForm({
 }) {
   const { state, formAction, formRef, dirty, setDirty } = useSavedForm(updateDetails);
   const errors = state.fieldErrors ?? {};
+  const [showSaved, setShowSaved] = useState(false);
+
+  // Show "Saved" for a few seconds after a save works.
+  useEffect(() => {
+    if (!state.ok) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- brief confirmation after saving
+    setShowSaved(true);
+    const timer = setTimeout(() => setShowSaved(false), 4000);
+    return () => clearTimeout(timer);
+  }, [state]);
 
   return (
     <form
@@ -446,9 +533,19 @@ export function DetailsForm({
       ) : null}
       {closed ? null : (
         <div className="item-actions">
-          <SubmitButton>Save details</SubmitButton>
-          <span className="success small" aria-live="polite">
-            {state.ok && !dirty ? "Saved" : ""}
+          {/* Off until something changes, so it's clear when there's nothing to save. */}
+          <SubmitButton className="btn btn-primary" disabled={!dirty}>
+            Save details
+          </SubmitButton>
+          <span className="small save-status" aria-live="polite">
+            {dirty ? (
+              <span className="muted">Unsaved changes</span>
+            ) : showSaved ? (
+              <span className="success saved-flash">
+                <CheckIcon size={14} />
+                Saved
+              </span>
+            ) : null}
           </span>
         </div>
       )}
@@ -464,7 +561,7 @@ export function SendReminderButton({ checklistId, hasEmail }: { checklistId: str
   function send() {
     if (pending) return;
     if (!hasEmail) {
-      setResult({ ok: false, text: "Reminders need a client email. Add one above and save it first." });
+      setResult({ ok: false, text: "Reminders need a client email. Add one in step 2 and save it first." });
       return;
     }
     setResult(null);
@@ -483,14 +580,28 @@ export function SendReminderButton({ checklistId, hasEmail }: { checklistId: str
   }
 
   return (
-    <>
-      <button type="button" className="btn" onClick={send} disabled={pending}>
-        {pending ? <span className="spinner" aria-hidden="true" /> : null}
-        Send reminder
-      </button>
-      <span className={`small ${result?.ok ? "success" : result ? "error" : "muted"}`} role="status" aria-live="polite">
-        {result?.text ?? ""}
-      </span>
-    </>
+    <div className="reminder">
+      <div className="item-actions">
+        <button type="button" className="btn btn-primary" onClick={send} disabled={pending}>
+          {pending ? <span className="spinner" aria-hidden="true" /> : <BellIcon size={16} />}
+          Send reminder
+        </button>
+        {result?.ok ? (
+          <span className="small success saved-flash" role="status">
+            <CheckIcon size={14} />
+            {result.text}
+          </span>
+        ) : null}
+      </div>
+      {/* Refusals get a calm box with the reason, not small red text. */}
+      <div aria-live="polite">
+        {result && !result.ok ? (
+          <div className="callout" role="status">
+            <InfoIcon size={16} />
+            <p>{result.text}</p>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
