@@ -748,3 +748,294 @@ dialog::backdrop {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Editor: sticky progress header, stepper and compact document rows */
+
+/* Keep focused fields from hiding under the sticky header. */
+:root:has(.editor-head) {
+  scroll-padding-top: 200px;
+}
+
+.editor-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 240px);
+  align-items: end;
+  gap: 12px 24px;
+  margin: 0 -24px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.editor-head nav {
+  grid-column: 1 / -1;
+}
+
+.editor-title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.editor-title h1 {
+  font-size: 24px;
+}
+
+.editor-progress {
+  display: grid;
+  gap: 6px;
+}
+
+.stepper {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 14px;
+  text-decoration: none;
+  touch-action: manipulation;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.step:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.step.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+.step-num {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  font-size: 12px;
+}
+
+.step.is-active .step-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.step-short {
+  display: none;
+}
+
+.step-panel {
+  margin-top: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.step-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.subhead {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.doc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.doc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.doc-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.doc-title {
+  font-weight: 600;
+}
+
+.doc-num {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.doc-note {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.doc-client-note {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-left: 3px solid var(--line-strong);
+  border-radius: 0 6px 6px 0;
+  white-space: pre-wrap;
+}
+
+.doc-client-label {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.doc-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.doc-actions form {
+  margin: 0;
+}
+
+.item-modal {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.modal-actions {
+  justify-content: flex-end;
+}
+
+.modal-remove {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.demo-note {
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  border-radius: 8px;
+}
+
+.manage-list {
+  border-top: 1px solid var(--line);
+}
+
+.manage-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.manage-row > div {
+  flex: 1 1 260px;
+  display: grid;
+  gap: 2px;
+}
+
+@media (max-width: 640px) {
+  :root:has(.editor-head) {
+    scroll-padding-top: 190px;
+  }
+  .editor-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin: 0 -16px;
+    padding: 10px 16px;
+  }
+  .editor-title h1 {
+    font-size: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .step {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-height: 50px;
+    padding: 4px 2px;
+    font-size: 12px;
+  }
+  .step-long {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .step-short {
+    display: block;
+  }
+  .doc-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .doc-side {
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step {
+    transition: none;
+  }
+}
