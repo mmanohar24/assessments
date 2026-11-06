@@ -1251,3 +1251,68 @@ dialog::backdrop {
 .doc-client-note {
   margin-top: 0;
 }
+
+/* Last polish: top-aligned columns on wide screens, tighter title and note */
+
+/* Desktop keeps the whole header sticky. The wrapper doesn't affect the grid there. */
+.editor-sticky {
+  display: contents;
+}
+
+.doc-main {
+  gap: 0;
+}
+
+.doc-note {
+  margin-top: 5px;
+}
+
+.doc-client-note {
+  margin-top: 12px;
+}
+
+@media (min-width: 641px) {
+  /* Chip and actions in fixed columns, level with the title line. The negative margin
+     lines the middle of the 40px buttons up with the middle of the title text. */
+  .doc-side {
+    display: grid;
+    grid-template-columns: 180px 210px;
+    align-items: center;
+    justify-items: start;
+    align-self: start;
+    gap: 12px;
+    margin-top: -9px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Finished rows: chip, Unmark and Edit on one line. */
+  .doc-row-received .doc-side {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* Only the progress and the stepper stay on screen. The name and due date scroll away. */
+  :root:has(.editor-head) {
+    scroll-padding-top: 120px;
+  }
+  /* Unwrap the header so the sticky part sticks to the whole page, not just the header. */
+  .editor-head {
+    display: contents;
+  }
+  .editor-title {
+    margin-bottom: 8px;
+  }
+  .editor-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: grid;
+    gap: 8px;
+    margin: 0 -16px;
+    padding: 8px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+}

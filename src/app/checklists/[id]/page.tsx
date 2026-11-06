@@ -97,50 +97,53 @@ export default async function ChecklistPage({ params, searchParams }: PageProps)
               {closed ? " · Closed" : ""}
             </p>
           </div>
-          <div className="editor-progress">
-            <p className="small num">
-              <strong>
-                {received} of {items.length} received
-              </strong>
-              <span className="muted">, {sent} sent</span>
-            </p>
-            <div
-              className="bar"
-              role="progressbar"
-              aria-label="Documents received"
-              aria-valuemin={0}
-              aria-valuemax={items.length}
-              aria-valuenow={received}
-            >
-              <span style={{ width: `${percent}%` }} />
+          {/* On phones only this part stays on screen. The name scrolls away. */}
+          <div className="editor-sticky">
+            <div className="editor-progress">
+              <p className="small num">
+                <strong>
+                  {received} of {items.length} received
+                </strong>
+                <span className="muted">, {sent} sent</span>
+              </p>
+              <div
+                className="bar"
+                role="progressbar"
+                aria-label="Documents received"
+                aria-valuemin={0}
+                aria-valuemax={items.length}
+                aria-valuenow={received}
+              >
+                <span style={{ width: `${percent}%` }} />
+              </div>
             </div>
-          </div>
 
-          <nav aria-label="Checklist steps">
-            <ol className="stepper">
-              {STEPS.map((s, index) => {
-                const active = s.key === step.key;
-                return (
-                  <li key={s.key}>
-                    <Link
-                      href={href(s.key)}
-                      className={`step${active ? " is-active" : ""}`}
-                      aria-current={active ? "page" : undefined}
-                      scroll={false}
-                    >
-                      <span className="step-num num" aria-hidden="true">
-                        {index + 1}
-                      </span>
-                      <span className="step-long">{s.label}</span>
-                      <span className="step-short" aria-hidden="true">
-                        {s.short}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ol>
-          </nav>
+            <nav aria-label="Checklist steps">
+              <ol className="stepper">
+                {STEPS.map((s, index) => {
+                  const active = s.key === step.key;
+                  return (
+                    <li key={s.key}>
+                      <Link
+                        href={href(s.key)}
+                        className={`step${active ? " is-active" : ""}`}
+                        aria-current={active ? "page" : undefined}
+                        scroll={false}
+                      >
+                        <span className="step-num num" aria-hidden="true">
+                          {index + 1}
+                        </span>
+                        <span className="step-long">{s.label}</span>
+                        <span className="step-short" aria-hidden="true">
+                          {s.short}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+            </nav>
+          </div>
         </div>
 
         {closed ? (

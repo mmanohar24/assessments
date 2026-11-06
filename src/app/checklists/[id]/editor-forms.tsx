@@ -190,7 +190,7 @@ export function DocumentRow({
   );
 
   return (
-    <li className="doc-row">
+    <li className={`doc-row doc-row-${item.status}`}>
       <div className="doc-main">
         <p className="doc-title break">
           <span className="doc-num num" aria-hidden="true">
