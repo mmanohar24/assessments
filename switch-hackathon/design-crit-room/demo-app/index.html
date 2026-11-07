@@ -1,0 +1,80 @@
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse Studio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+
+    <div class="nav">
+      <div class="logo">pulse<span>.</span></div>
+      <div class="nav-links">
+        <a href="#">Classes</a>
+        <a href="#">Coaches</a>
+        <a href="#">Pricing</a>
+      </div>
+      <button type="button" class="icon-btn" aria-label="Open menu" onclick="alert('menu')">☰</button>
+    </div>
+
+    <div class="hero">
+      <h1>Book your next class</h1>
+      <p class="sub">Strength, yoga and HIIT classes near you. Pick a slot and you are in. Cancel up to 2 hours before.</p>
+    </div>
+
+    <h4 class="section-title">This week</h4>
+
+    <div class="cards">
+      <div class="card">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Crect width='320' height='180' fill='%23c9e4de'/%3E%3Ctext x='160' y='98' font-family='Arial' font-size='22' text-anchor='middle' fill='%23333'%3EYoga%3C/text%3E%3C/svg%3E" width="320" height="180">
+        <div class="card-body">
+          <div class="class-name">Morning Flow Yoga</div>
+          <div class="meta">Mon 7:00 AM · 45 min · Coach Priya</div>
+          <div class="price">₹450</div>
+          <div class="spots">2 spots left</div>
+          <button class="btn-primary">Book now</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Crect width='320' height='180' fill='%23f7d6c7'/%3E%3Ctext x='160' y='98' font-family='Arial' font-size='22' text-anchor='middle' fill='%23333'%3EHIIT%3C/text%3E%3C/svg%3E" width="320" height="180">
+        <div class="card-body">
+          <div class="class-name">HIIT Blast</div>
+          <div class="meta">Tue 6:30 PM · 30 min · Coach Arjun</div>
+          <div class="price">₹500</div>
+          <div class="spots">Full</div>
+          <button type="button" class="btn-primary">Join waitlist</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Crect width='320' height='180' fill='%23d6dcf7'/%3E%3Ctext x='160' y='98' font-family='Arial' font-size='22' text-anchor='middle' fill='%23333'%3EStrength%3C/text%3E%3C/svg%3E" width="320" height="180">
+        <div class="card-body">
+          <div class="class-name">Strength Basics</div>
+          <div class="meta">Thu 8:00 AM · 60 min · Coach Meera</div>
+          <div class="price">₹600</div>
+          <div class="spots">8 spots left</div>
+          <button type="button" class="btn-primary" onclick="alert('booked')">Book now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="checkout">
+      <h2>Your details</h2>
+      <form onsubmit="event.preventDefault(); document.getElementById('err').style.display='block'">
+        <label for="full-name">Full name</label>
+        <input id="full-name" name="name" autocomplete="name" type="text" placeholder="Full name">
+        <label for="phone">Phone</label>
+        <input id="phone" name="tel" autocomplete="tel" type="tel" placeholder="Phone">
+        <label for="email">Email</label>
+        <input id="email" name="email" autocomplete="email" type="email" placeholder="Email">
+        <p id="err" class="error">Something went wrong</p>
+        <button class="btn-secondary" type="submit">Continue</button>
+      </form>
+      <p class="terms">By continuing you agree to our terms. To read them <a href="#">click here</a>.</p>
+    </div>
+
+    <div class="footer">© 2026 Pulse Studio (fictional demo brand)</div>
+  </div>
+</body>
+</html>
